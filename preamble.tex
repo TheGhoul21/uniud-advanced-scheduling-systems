@@ -1,0 +1,201 @@
+% ============================================================
+%  Advanced Scheduling Systems — shared preamble
+% ============================================================
+
+\usepackage[a4paper,
+            top=25mm, bottom=25mm,
+            left=25mm, right=55mm,   % wide right margin for notes
+            marginparwidth=45mm,
+            marginparsep=4mm]{geometry}
+
+% --- typography & encoding ---
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{microtype}
+\usepackage{lmodern}
+
+% --- math ---
+\usepackage{amsmath, amssymb, amsthm, mathtools}
+
+% --- margin notes ---
+\usepackage{marginnote}
+\usepackage{sidenotes}          % \sidenote{}, \marginnote{}
+
+% --- code listings ---
+\usepackage{listings}
+\usepackage{xcolor}
+
+\definecolor{codebg}{RGB}{245,245,245}
+\definecolor{codecomment}{RGB}{100,100,100}
+\definecolor{codekw}{RGB}{0,0,200}
+\definecolor{codestr}{RGB}{163,21,21}
+
+\lstset{
+  backgroundcolor=\color{codebg},
+  basicstyle=\ttfamily\small,
+  keywordstyle=\color{codekw}\bfseries,
+  commentstyle=\color{codecomment}\itshape,
+  stringstyle=\color{codestr},
+  numbers=left, numberstyle=\tiny\color{gray},
+  numbersep=6pt,
+  breaklines=true,
+  frame=single, framesep=4pt,
+  captionpos=b,
+  tabsize=4,
+  showstringspaces=false,
+}
+
+% --- pseudocode ---
+\usepackage[ruled, vlined, linesnumbered]{algorithm2e}
+\SetAlgoLined
+\DontPrintSemicolon
+
+% --- graphics / figures ---
+\usepackage{float}      % provides [H] float placement
+\usepackage{graphicx}
+\usepackage{caption}    % provides \caption*{} for unnumbered captions
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta, positioning, shapes.geometric, decorations.pathmorphing, decorations.pathreplacing}
+
+% --- hyperlinks ---
+\usepackage[colorlinks=true, linkcolor=blue!70!black,
+            citecolor=green!50!black, urlcolor=blue]{hyperref}
+
+% --- misc ---
+\raggedbottom
+\usepackage{enumitem}
+\usepackage{booktabs}
+\usepackage{cleveref}
+
+% --- intermezzo box ---
+\usepackage[framemethod=tikz]{mdframed}
+\newmdenv[
+  skipabove=\bigskipamount,
+  skipbelow=\bigskipamount,
+  backgroundcolor=orange!4,
+  hidealllines=true,
+  innertopmargin=12pt,
+  innerbottommargin=12pt,
+  innerleftmargin=14pt,
+  innerrightmargin=12pt,
+]{intermezzoframe}
+\newenvironment{intermezzo}[1]{%
+  \begin{adjustwidth}{-5mm}{-35mm}%
+  \begin{intermezzoframe}%
+  \noindent{\small\sffamily\bfseries\color{orange!60!black}%
+    \raisebox{0.5pt}{\rule{6pt}{6pt}}\enspace%
+    Intermezzo\enspace---\enspace#1}%
+  \par\vspace{6pt}%
+}{%
+  \end{intermezzoframe}%
+  \end{adjustwidth}%
+}
+
+% --- formal-details box ---
+\usepackage{changepage}
+\newmdenv[
+  skipabove=\bigskipamount,
+  skipbelow=\bigskipamount,
+  backgroundcolor=teal!4,
+  hidealllines=true,
+  innertopmargin=12pt,
+  innerbottommargin=12pt,
+  innerleftmargin=14pt,
+  innerrightmargin=12pt,
+]{formaldetailsframe}
+\newenvironment{formaldetails}[1][]{%
+  \begin{adjustwidth}{-5mm}{-35mm}%
+  \begin{formaldetailsframe}%
+  \noindent{\small\sffamily\bfseries\color{teal!60!black}%
+    \raisebox{0.5pt}{\rule{6pt}{6pt}}\enspace%
+    Formal details%
+    \if\relax\detokenize{#1}\relax\else
+      \enspace---\enspace#1%
+    \fi}%
+  \par\vspace{6pt}%
+}{%
+  \end{formaldetailsframe}%
+  \end{adjustwidth}%
+}
+
+% --- loop-invariant proof structure ---
+\newlist{loopproof}{description}{1}
+\setlist[loopproof]{
+  font=\normalfont\small\itshape,
+  leftmargin=3.2cm,
+  labelwidth=3.0cm,
+  labelsep=0.2cm,
+  style=sameline,
+  topsep=3pt,
+  itemsep=4pt,
+  parsep=0pt,
+}
+\newcommand{\lprulesep}{%
+  \vspace{4pt}{\color{blue!20}\hrule height 0.4pt}\vspace{6pt}%
+}
+
+% ---- theorem environments ----
+\theoremstyle{plain}
+\newtheorem{theorem}{Theorem}[section]
+\newtheorem{lemma}[theorem]{Lemma}
+\newtheorem{corollary}[theorem]{Corollary}
+\newtheorem{proposition}[theorem]{Proposition}
+
+\theoremstyle{definition}
+\newtheorem{definition}[theorem]{Definition}
+\newtheorem{example}[theorem]{Example}
+\newtheorem{problem}[theorem]{Problem}
+
+\theoremstyle{remark}
+\newtheorem{remark}[theorem]{Remark}
+\newtheorem{note}[theorem]{Note}
+\newtheorem{observation}[theorem]{Observation}
+\newtheorem{exercise}[theorem]{Exercise}
+
+% ---- theorem environment styles (colored left bar) ----
+\mdfdefinestyle{thmbar}{%
+  skipabove=7pt, skipbelow=5pt,
+  topline=false, rightline=false, bottomline=false, leftline=true,
+  linewidth=2.5pt,
+  innerleftmargin=9pt, innerrightmargin=4pt,
+  innertopmargin=3pt,  innerbottommargin=3pt,
+}
+\surroundwithmdframed[style=thmbar,
+  linecolor=blue!60!black, backgroundcolor=blue!4]{theorem}
+\surroundwithmdframed[style=thmbar,
+  linecolor=blue!60!black, backgroundcolor=blue!4]{lemma}
+\surroundwithmdframed[style=thmbar,
+  linecolor=blue!60!black, backgroundcolor=blue!4]{corollary}
+\surroundwithmdframed[style=thmbar,
+  linecolor=blue!60!black, backgroundcolor=blue!4]{proposition}
+\surroundwithmdframed[style=thmbar,
+  linecolor=teal!65!black,  backgroundcolor=teal!4]{definition}
+\surroundwithmdframed[style=thmbar,
+  linecolor=orange!70!black, backgroundcolor=orange!5]{example}
+\surroundwithmdframed[style=thmbar,
+  linecolor=violet!60!black, backgroundcolor=violet!4]{exercise}
+\surroundwithmdframed[style=thmbar,
+  linecolor=violet!60!black, backgroundcolor=violet!4]{problem}
+\surroundwithmdframed[style=thmbar,
+  linecolor=gray!50, backgroundcolor=gray!4]{remark}
+\surroundwithmdframed[style=thmbar,
+  linecolor=gray!50, backgroundcolor=gray!4]{note}
+\surroundwithmdframed[style=thmbar,
+  linecolor=gray!50, backgroundcolor=gray!4]{observation}
+
+% ---- custom margin-note shorthand ----
+\newcommand{\aside}[2][0pt]{%
+  \marginnote{\footnotesize\itshape #2}[#1]%
+}
+
+% ---- scheduling notation ----
+\newcommand{\Cmax}{C_{\max}}                     % makespan
+\newcommand{\Lmax}{L_{\max}}                     % maximum lateness
+\newcommand{\wC}{\sum w_j C_j}                   % weighted completion time
+\newcommand{\wT}{\sum w_j T_j}                   % weighted tardiness
+
+% ---- complexity shortcuts ----
+\newcommand{\Oh}[1]{\mathcal{O}\!\left(#1\right)}
+\newcommand{\Th}[1]{\Theta\!\left(#1\right)}
+\newcommand{\Om}[1]{\Omega\!\left(#1\right)}
+\newcommand{\NP}{\mathsf{NP}}

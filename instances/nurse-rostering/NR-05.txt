@@ -1,0 +1,32 @@
+SKILLS = 2
+HeadNurse
+Nurse
+
+SHIFT_TYPES = 3
+Early 0
+Late 1 Early
+Night 2 Early Late
+
+CONTRACTS = 2
+FullTime (4,5) 1
+PartTime (2,3) 1
+
+NURSES = 5
+Patrick FullTime 2 HeadNurse Nurse 
+Andrea FullTime 2 HeadNurse Nurse
+Stefaan PartTime 2 HeadNurse Nurse
+Sara PartTime 1 Nurse
+Nguyen FullTime 1 Nurse
+
+REQUIREMENTS
+Early HeadNurse (1,1) (0,0) (0,0) (0,0) (0,0) (1,1) (0,0)
+Early Nurse (1,2) (1,1) (1,1) (0,1) (1,1) (1,1) (0,1)
+Late HeadNurse (1,1) (0,1) (1,1) (0,0) (0,0) (0,0) (0,0)
+Late Nurse (1,1) (1,1) (0,1) (0,1) (1,1) (1,1) (1,1)
+Night HeadNurse (0,0) (1,1) (0,0) (0,0) (1,1) (1,1) (0,0)
+Night Nurse (0,1) (1,1) (1,1) (1,1) (1,1) (0,1) (1,1)
+
+SHIFT_OFF_REQUESTS = 3
+Sara Any Thu 
+Sara Night Sat 
+Stefaan Late Sat 

@@ -1,0 +1,288 @@
+---
+title: "Knapsack: Greedy Strategies Compared"
+subtitle: "Interactive visualizations for Chapter 2 of the Advanced Scheduling Systems notes"
+engine: knitr
+format:
+  live-html:
+    theme: cosmo
+    toc: true
+    toc-depth: 3
+    pyodide:
+      packages:
+        - matplotlib
+        - numpy
+      cell-options:
+        autorun: true
+        edit: false
+        echo: false
+---
+
+# Knapsack: Greedy Strategies Compared
+
+We compare four greedy approaches to the 0/1 knapsack problem (plus the fractional relaxation). Each strategy sorts items by a different criterion and greedily packs them into the knapsack.
+
+```{pyodide}
+#| autorun: true
+#| edit: false
+#| output: false
+
+import matplotlib.pyplot as plt
+import matplotlib.patches as mpatches
+import numpy as np
+
+# Colors
+C_AVAILABLE  = '#bdbdbd'
+C_SELECTED   = '#4caf50'
+C_NO_FIT     = '#e53935'
+C_CURRENT    = '#1e88e5'
+C_PARTIAL    = '#90caf9'
+C_STRATEGIES = ['#1e88e5', '#e53935', '#4caf50', '#ff9800']
+
+plt.rcParams.update({
+    'font.family': 'monospace',
+    'font.size': 11,
+    'axes.spines.top': False,
+    'axes.spines.right': False,
+    'figure.facecolor': 'white',
+    'figure.dpi': 120,
+})
+
+# Instance
+weights = [100, 50, 45, 20, 10, 5]
+values  = [40, 35, 18, 4, 10, 2]
+W = 100
+optimum = 55
+n_items = len(weights)
+
+# Greedy solvers
+
+def greedy_solve(weights, values, W, key_fn):
+    n = len(weights)
+    order = sorted(range(n), key=key_fn, reverse=True)
+    selected, rejected = [], []
+    rem, val, wt = W, 0, 0
+    for idx in order:
+        if weights[idx] <= rem:
+            selected.append(idx)
+            rem -= weights[idx]
+            val += values[idx]
+            wt  += weights[idx]
+        else:
+            rejected.append(idx)
+    return selected, rejected, val, wt, rem, order
+
+
+def fractional_solve(weights, values, W):
+    n = len(weights)
+    order = sorted(range(n), key=lambda i: values[i]/weights[i], reverse=True)
+    fractions = {}
+    selected = []
+    rem, val, wt = float(W), 0.0, 0.0
+    for idx in order:
+        if weights[idx] <= rem:
+            selected.append(idx)
+            fractions[idx] = 1.0
+            rem -= weights[idx]
+            val += values[idx]
+            wt  += weights[idx]
+        elif rem > 0:
+            frac = rem / weights[idx]
+            selected.append(idx)
+            fractions[idx] = frac
+            val += values[idx] * frac
+            wt  += weights[idx] * frac
+            rem = 0
+        else:
+            fractions[idx] = 0.0
+    return selected, fractions, val, wt, order
+
+
+# Solve all strategies
+strategies = {}
+
+sel, rej, val, wt, rem, ord_ = greedy_solve(weights, values, W, key_fn=lambda i: values[i])
+strategies['Max Value'] = {'selected': sel, 'rejected': rej, 'value': val, 'weight': wt, 'order': ord_}
+
+sel, rej, val, wt, rem, ord_ = greedy_solve(weights, values, W, key_fn=lambda i: -weights[i])
+strategies['Min Weight'] = {'selected': sel, 'rejected': rej, 'value': val, 'weight': wt, 'order': ord_}
+
+sel, rej, val, wt, rem, ord_ = greedy_solve(weights, values, W, key_fn=lambda i: values[i]/weights[i])
+strategies['Best Ratio'] = {'selected': sel, 'rejected': rej, 'value': val, 'weight': wt, 'order': ord_}
+
+sel, fracs, val, wt, ord_ = fractional_solve(weights, values, W)
+strategies['Fractional'] = {'selected': sel, 'fractions': fracs, 'value': val, 'weight': wt, 'order': ord_}
+```
+
+## Problem Instance
+
+| Item | Weight | Value | Ratio (v/w) |
+|------|--------|-------|-------------|
+| 0    | 100    | 40    | 0.40        |
+| 1    | 50     | 35    | 0.70        |
+| 2    | 45     | 18    | 0.40        |
+| 3    | 20     | 4     | 0.20        |
+| 4    | 10     | 10    | 1.00        |
+| 5    | 5      | 2     | 0.40        |
+
+**Capacity W = 100.** The optimal 0/1 solution has value **55**.
+
+## Strategy Results
+
+Each strategy sorts items by a different criterion, then greedily packs them if they fit.
+
+### Max Value Strategy
+
+Sort by decreasing value. Pick the most valuable items first.
+
+```{pyodide}
+#| autorun: true
+#| edit: false
+
+s = strategies['Max Value']
+fig, ax = plt.subplots(figsize=(9, 4))
+labels = [f'Item {i}\nw={weights[i]} v={values[i]}' for i in range(n_items)]
+bar_colors = [C_SELECTED if i in s['selected'] else C_NO_FIT for i in range(n_items)]
+# Reorder bars by strategy order
+reorder = s['order']
+ax.bar(range(n_items), [values[i] for i in reorder],
+       color=[C_SELECTED if i in s['selected'] else C_NO_FIT for i in reorder],
+       edgecolor='white', linewidth=1.2)
+ax.set_xticks(range(n_items))
+ax.set_xticklabels([f'Item {i}\nw={weights[i]} v={values[i]}' for i in reorder], fontsize=8)
+ax.set_ylabel('Value')
+order_str = ' -> '.join(f'Item {i}' for i in reorder)
+ax.set_xlabel(f'Consideration order: {order_str}', fontsize=8, color='#666')
+ax.set_title(f"Max Value  |  Total value: {s['value']}  |  Total weight: {s['weight']}",
+             fontsize=11, fontweight='bold', loc='left')
+patches = [mpatches.Patch(color=C_SELECTED, label='Selected'),
+           mpatches.Patch(color=C_NO_FIT, label="Doesn't fit")]
+ax.legend(handles=patches, fontsize=9, loc='upper right')
+plt.tight_layout()
+plt.show()
+```
+
+### Min Weight Strategy
+
+Sort by increasing weight. Pick the lightest items first.
+
+```{pyodide}
+#| autorun: true
+#| edit: false
+
+s = strategies['Min Weight']
+fig, ax = plt.subplots(figsize=(9, 4))
+reorder = s['order']
+ax.bar(range(n_items), [values[i] for i in reorder],
+       color=[C_SELECTED if i in s['selected'] else C_NO_FIT for i in reorder],
+       edgecolor='white', linewidth=1.2)
+ax.set_xticks(range(n_items))
+ax.set_xticklabels([f'Item {i}\nw={weights[i]} v={values[i]}' for i in reorder], fontsize=8)
+ax.set_ylabel('Value')
+order_str = ' -> '.join(f'Item {i}' for i in reorder)
+ax.set_xlabel(f'Consideration order: {order_str}', fontsize=8, color='#666')
+ax.set_title(f"Min Weight  |  Total value: {s['value']}  |  Total weight: {s['weight']}",
+             fontsize=11, fontweight='bold', loc='left')
+patches = [mpatches.Patch(color=C_SELECTED, label='Selected'),
+           mpatches.Patch(color=C_NO_FIT, label="Doesn't fit")]
+ax.legend(handles=patches, fontsize=9, loc='upper right')
+plt.tight_layout()
+plt.show()
+```
+
+### Best Ratio Strategy
+
+Sort by decreasing value-to-weight ratio. This is the most effective greedy heuristic for 0/1 knapsack.
+
+```{pyodide}
+#| autorun: true
+#| edit: false
+
+s = strategies['Best Ratio']
+fig, ax = plt.subplots(figsize=(9, 4))
+reorder = s['order']
+ax.bar(range(n_items), [values[i] for i in reorder],
+       color=[C_SELECTED if i in s['selected'] else C_NO_FIT for i in reorder],
+       edgecolor='white', linewidth=1.2)
+ax.set_xticks(range(n_items))
+ax.set_xticklabels([f'Item {i}\nw={weights[i]} v={values[i]}\nr={values[i]/weights[i]:.2f}' for i in reorder], fontsize=8)
+ax.set_ylabel('Value')
+order_str = ' -> '.join(f'Item {i}' for i in reorder)
+ax.set_xlabel(f'Consideration order: {order_str}', fontsize=8, color='#666')
+ax.set_title(f"Best Ratio  |  Total value: {s['value']}  |  Total weight: {s['weight']}",
+             fontsize=11, fontweight='bold', loc='left')
+patches = [mpatches.Patch(color=C_SELECTED, label='Selected'),
+           mpatches.Patch(color=C_NO_FIT, label="Doesn't fit")]
+ax.legend(handles=patches, fontsize=9, loc='upper right')
+plt.tight_layout()
+plt.show()
+```
+
+### Fractional Relaxation
+
+Allow partial items. Sort by ratio and take fractions when an item does not fully fit. This gives an upper bound on the 0/1 optimum.
+
+```{pyodide}
+#| autorun: true
+#| edit: false
+
+s = strategies['Fractional']
+fig, ax = plt.subplots(figsize=(9, 4))
+reorder = s['order']
+fracs = s['fractions']
+
+for pos_idx, i in enumerate(reorder):
+    frac = fracs.get(i, 0)
+    full_h = values[i]
+    if frac >= 1.0:
+        ax.bar(pos_idx, full_h, color=C_SELECTED, edgecolor='white', linewidth=1.2)
+    elif frac > 0:
+        taken_h = full_h * frac
+        ax.bar(pos_idx, taken_h, color=C_SELECTED, edgecolor='white', linewidth=1.2)
+        ax.bar(pos_idx, full_h - taken_h, bottom=taken_h, color=C_PARTIAL,
+               edgecolor='white', linewidth=1.2, hatch='//')
+        ax.text(pos_idx, taken_h + 0.3, f'{frac:.0%}', ha='center',
+                fontsize=9, fontweight='bold')
+    else:
+        ax.bar(pos_idx, full_h, color=C_NO_FIT, edgecolor='white', linewidth=1.2)
+
+ax.set_xticks(range(n_items))
+ax.set_xticklabels([f'Item {i}\nw={weights[i]} v={values[i]}\nr={values[i]/weights[i]:.2f}' for i in reorder], fontsize=8)
+ax.set_ylabel('Value')
+ax.set_title(f"Fractional  |  Total value: {s['value']:.2f}  |  Total weight: {s['weight']:.1f}",
+             fontsize=11, fontweight='bold', loc='left')
+patches = [mpatches.Patch(color=C_SELECTED, label='Fully taken'),
+           mpatches.Patch(color=C_PARTIAL, label='Partial'),
+           mpatches.Patch(color=C_NO_FIT, label='Not taken')]
+ax.legend(handles=patches, fontsize=9, loc='upper right')
+plt.tight_layout()
+plt.show()
+```
+
+## Strategy Comparison
+
+```{pyodide}
+#| autorun: true
+#| edit: false
+
+fig, ax = plt.subplots(figsize=(9, 4.5))
+names = list(strategies.keys())
+finals = [strategies[name]['value'] for name in names]
+bars = ax.bar(range(len(names)), finals, color=C_STRATEGIES[:len(names)],
+              edgecolor='white', linewidth=1.2)
+for b, v in zip(bars, finals):
+    label = f'{v:.2f}' if isinstance(v, float) else str(v)
+    ax.text(b.get_x() + b.get_width()/2, v + 0.5, label,
+            ha='center', fontsize=10, fontweight='bold')
+
+ax.axhline(optimum, color='black', linestyle='--', linewidth=1.5,
+           label=f'0/1 Optimum = {optimum}')
+ax.legend(fontsize=10)
+ax.set_xticks(range(len(names)))
+ax.set_xticklabels(names, fontsize=10)
+ax.set_ylabel('Total Value')
+ax.set_title('Strategy Comparison', fontsize=13, fontweight='bold')
+plt.tight_layout()
+plt.show()
+```
+
+**Key takeaway:** The Best Ratio greedy heuristic achieves the optimum on this instance, while the Fractional relaxation provides an upper bound. Max Value and Min Weight perform worse because they do not balance weight and value.

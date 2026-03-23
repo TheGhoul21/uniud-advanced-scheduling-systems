@@ -1,0 +1,15 @@
+---
+title: "Advanced Scheduling Systems — Interactive Companions"
+---
+
+Interactive visualizations for the **Advanced Scheduling Systems** course at the University of Udine.
+
+Each notebook lets you step through classic scheduling algorithms with sliders and custom inputs — all running directly in your browser via [Pyodide](https://pyodide.org), no installation required.
+
+## Notebooks
+
+### Chapter 1 — Introduction to Scheduling
+
+1. [**Critical Path Method (CPM)**](notebooks/01-cpm.qmd) — Forward pass, backward pass, and critical path on a precedence DAG
+2. [**Knapsack: Greedy Strategies Compared**](notebooks/02-knapsack.qmd) — Max value, min weight, best ratio, and fractional relaxation side by side
+3. [**DSatur: Graph Colouring**](notebooks/03-dsatur.qmd) — Step through saturation-degree colouring vs max-degree ordering

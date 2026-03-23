@@ -1,0 +1,682 @@
+% ============================================================
+%  Lecture 2 — Knapsack, complexity, RCPSP, shop scheduling
+%  (still Chapter 1: Introduction to Scheduling)
+% ============================================================
+
+\section{The Knapsack Problem}
+\label{sec:knapsack}
+
+Before continuing with scheduling problems, we take a detour
+through a simpler combinatorial problem that lets us sharpen
+three important ideas: greedy heuristics, upper bounds, and the
+distinction between easy and hard problems.%
+\aside{Not a scheduling problem, but the
+perfect sandbox for greedy, bounds, and
+complexity concepts.}
+
+\begin{definition}[0/1 Knapsack Problem]
+\label{def:knapsack}
+We are given $n$ items, each with a \emph{weight} $w_i$ and a
+\emph{value} $v_i$, and a knapsack of capacity~$W$.
+We must choose a subset of items that fits in the knapsack
+and maximises total value:
+\[
+  \max \sum_{i=1}^{n} v_i\, x_i
+  \qquad\text{s.t.}\quad
+  \sum_{i=1}^{n} w_i\, x_i \le W,
+  \qquad x_i \in \{0,1\}.
+\]
+\end{definition}
+
+In plain words: every item is either taken ($x_i = 1$) or
+left behind ($x_i = 0$).  We want as much value as possible
+without exceeding the weight limit.  Think of packing a
+backpack for a hike, or---in computing---selecting files to
+store on a disk with limited capacity.
+
+% ------------------------------------------------------------
+\subsection{Three greedy strategies}
+\label{ssec:knapsack-greedy}
+% ------------------------------------------------------------
+
+\begin{example}[Six-item knapsack instance]
+\label{ex:knapsack-six}
+Consider six items with capacity $W = 100$:
+
+\begin{figure}[H]
+\centering
+\begin{tabular}{lcccccc}
+\toprule
+\textbf{Item}   & 1   & 2   & 3   & 4  & 5  & 6 \\
+\midrule
+Weight $w_i$     & 100 & 50  & 45  & 20 & 10 & 5 \\
+Value  $v_i$     & 40  & 35  & 18  & 4  & 10 & 2 \\
+Ratio $v_i/w_i$  & 0.40& 0.70& 0.40& 0.20& 1.00& 0.40\\
+\bottomrule
+\end{tabular}
+\caption{Data for the six-item knapsack instance
+         (\cref{ex:knapsack-six}).}
+\label{fig:knapsack-data}
+\end{figure}
+\end{example}
+
+\noindent
+Let's try three natural greedy rules on this instance:
+
+\paragraph{Greedy 1: highest value first.}
+Pick the item with the largest~$v_i$ that still fits.
+\begin{itemize}[nosep]
+  \item Select item~1 ($v = 40$, $w = 100$).
+        Remaining capacity: $0$.
+  \item No more items fit.
+  \item \textbf{Total value: 40.}
+\end{itemize}
+
+\paragraph{Greedy 2: lightest first.}
+Pick the item with the smallest~$w_i$ that still fits.
+\begin{itemize}[nosep]
+  \item Select item~6 ($w = 5$), then 5 ($w = 10$),
+        then 4 ($w = 20$), then 3 ($w = 45$).
+        Remaining capacity: $100 - 80 = 20$.
+  \item Items~1 and~2 do not fit.
+  \item \textbf{Total value: $2 + 10 + 4 + 18 = 34$.}
+\end{itemize}
+
+\paragraph{Greedy 3: best value-to-weight ratio.}
+Pick the item with the highest $v_i / w_i$ that still fits.%
+\aside{The classic knapsack heuristic.
+Ties broken by largest item first.}
+\begin{itemize}[nosep]
+  \item Select item~5 (ratio 1.00, $w = 10$).
+        Remaining: $90$.
+  \item Select item~2 (ratio 0.70, $w = 50$).
+        Remaining: $40$.
+  \item Tied at ratio 0.40: items~1, 3, 6.
+        Item~1 ($w = 100$) does not fit;
+        item~3 ($w = 45$) does not fit;
+        item~6 ($w = 5$) fits.  Remaining: $35$.
+  \item Item~4 (ratio 0.20, $w = 20$) fits.  Remaining: $15$.
+  \item \textbf{Total value: $10 + 35 + 2 + 4 = 51$.}
+        Weight used: $85$.
+\end{itemize}
+
+\medskip\noindent
+None of these finds the optimal solution.  By inspection, items
+$\{2, 3, 6\}$ weigh exactly $50 + 45 + 5 = 100$ and achieve
+value $35 + 18 + 2 = \mathbf{55}$.  The best greedy (ratio-based)
+left 15 units of capacity unused, missing a better packing.
+
+% ------------------------------------------------------------
+\subsection{Upper bounds via relaxation}
+\label{ssec:knapsack-bound}
+% ------------------------------------------------------------
+
+We found a solution worth~55 by inspection, but how do we
+\emph{prove} no solution can do better?  The standard technique
+is \emph{relaxation}: solve an easier version of the problem
+whose optimal value is guaranteed to be at least as good.%
+\aside{For a maximisation problem, a relaxation gives an
+\emph{upper bound}.  For minimisation (like makespan), it gives
+a \emph{lower bound}.}
+
+\begin{definition}[Fractional Knapsack]
+\label{def:fractional-knapsack}
+The same formulation as \cref{def:knapsack}, but with
+$x_i \in [0, 1]$ instead of $x_i \in \{0, 1\}$.
+Items may be taken in fractions: if only half of item~$i$
+fits, we take half and get $\tfrac{1}{2} v_i$.
+\end{definition}
+
+Since any 0/1 solution is also a valid fractional solution,
+the fractional optimum is an upper bound on the integer optimum.
+And the fractional problem has a simple exact greedy:
+
+\begin{observation}
+The greedy algorithm that sorts items by decreasing $v_i / w_i$
+and takes as much of each item as fits is \emph{optimal}
+for the fractional knapsack.
+\end{observation}
+
+\begin{example}[Fractional bound for \cref{ex:knapsack-six}]
+\label{ex:fractional-bound}
+Sort by ratio: item~5 (1.00), item~2 (0.70), then the
+0.40-ratio group.
+\begin{itemize}[nosep]
+  \item Take all of item~5: weight 10, value 10. Remaining: 90.
+  \item Take all of item~2: weight 50, value 35. Remaining: 40.
+  \item Item~1 weighs 100; take $40/100 = 0.4$ of it:
+        weight 40, value $0.4 \times 40 = 16$.
+        Remaining: 0.
+\end{itemize}
+Total value: $10 + 35 + 16 = \mathbf{61}$.
+Since the integer optimum $\le 61$ and we found a feasible
+integer solution worth~55, the optimality gap is at most
+$61 - 55 = 6$.
+\end{example}
+
+\begin{remark}
+The fractional bound does not prove that 55 is optimal
+(there could be an integer solution worth 56, 57, \ldots, 61).
+For this small instance we verified optimality by inspection.
+For large instances, tighter bounds or exact algorithms
+(branch-and-bound, dynamic programming) are needed.
+\end{remark}
+
+
+% ============================================================
+\section{Easy vs Hard Problems}
+\label{sec:easy-hard}
+% ============================================================
+
+So far we have seen two \emph{easy} problems---project scheduling
+and fractional knapsack---where a greedy algorithm finds the
+optimum in polynomial time.  The 0/1 knapsack, by contrast,
+is \emph{hard}: no known polynomial-time algorithm solves it
+exactly.
+
+\begin{definition}[$\NP$-hard (informal)]
+\label{def:np-hard-informal}
+A problem is $\NP$-hard if the best known exact algorithms
+require time exponential in the input size.%
+\aside{Whether $\NP$-hard problems truly
+require exponential time is the open
+$\mathsf{P} \stackrel{?}{=} \NP$ question.}
+\end{definition}
+
+The key structural difference: for easy problems, the algorithm
+makes locally optimal choices with no branching.  For hard
+problems, at each step there are multiple choices (which item
+to take, which job to schedule next), and exploring all
+combinations leads to an exponential number of candidate
+solutions---roughly $2^n$ for $n$ binary decisions.
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[
+    level distance=14mm, sibling distance=28mm,
+    edge from parent/.style={draw, -Stealth, thick},
+    every node/.style={circle, draw=blue!60!black, fill=blue!8,
+                       minimum size=6mm, font=\footnotesize},
+    leaf/.style={fill=orange!15, draw=orange!60!black},
+    chosen/.style={fill=violet!15, draw=violet!70!black},
+    grayedge/.style={draw=gray!40, -Stealth},
+    >=Stealth
+  ]
+  \node[chosen] {}
+    child { node[chosen] {}
+      child { node[chosen, leaf] {}
+        edge from parent node[left, draw=none, fill=none,
+          font=\scriptsize\itshape, text=violet!70!black] {A} }
+      child { node[leaf] {}
+        edge from parent[grayedge] }
+      edge from parent node[left, draw=none, fill=none,
+        font=\scriptsize\itshape, text=violet!70!black] {A} }
+    child { node {}
+      child { node[leaf] {}
+        edge from parent[grayedge] }
+      child { node[leaf] {}
+        edge from parent[grayedge] }
+      edge from parent[grayedge] };
+\end{tikzpicture}
+\caption{A greedy algorithm (violet path) picks one branch at
+         each decision point, visiting $n$ nodes total.
+         An exact algorithm may need to explore all $2^n$
+         leaves.}
+\label{fig:search-tree}
+\end{figure}
+
+\noindent
+A \textbf{greedy} algorithm traverses a single root-to-leaf path
+through this tree: fast ($n$~steps), but no guarantee of finding
+the best leaf.
+An \textbf{exact} algorithm explores enough of the tree to
+certify optimality---potentially all of it.
+
+\begin{observation}
+Algorithms fall into two families:
+\begin{itemize}[nosep]
+  \item \textbf{Exact} algorithms guarantee the optimal
+        solution, but may take exponential time on hard problems.
+  \item \textbf{Heuristic} algorithms (greedy being the simplest
+        subfamily) find good solutions quickly, without optimality
+        guarantees.
+\end{itemize}
+This course covers both: we will implement greedy heuristics,
+enumeration (backtracking), constraint programming (via MiniZinc),
+and local search / metaheuristics.
+\end{observation}
+
+
+% ============================================================
+\section{Resource-Constrained Project Scheduling (RCPSP)}
+\label{sec:rcpsp}
+% ============================================================
+
+We now return to project scheduling and add the complication we
+set aside earlier: \textbf{resources}.
+
+\begin{definition}[Resource-Constrained Project Scheduling
+  Problem---RCPSP]
+\label{def:rcpsp}
+We are given the same data as the basic project scheduling
+problem (\cref{def:project-scheduling}), plus:
+\begin{itemize}[nosep]
+  \item $R$ types of \emph{renewable resources}, each with a
+        capacity $Q_r$ ($r = 1, \dots, R$);
+  \item for each job~$i$ and resource~$r$, the
+        \emph{resource demand} $q_{ir}$: how many units of
+        resource~$r$ job~$i$ uses while executing.
+\end{itemize}
+Resources are \emph{renewable}: a unit is occupied while a job
+runs, then becomes available again.%
+\aside{Workers, machines: busy during the
+job, free afterwards.  Non-renewable
+resources are consumed permanently.}
+
+\medskip\noindent
+A schedule must satisfy:
+\begin{enumerate}[nosep]
+  \item all precedence constraints (as before);
+  \item at every time instant~$t$, the total demand for each
+        resource~$r$ from all jobs running at time~$t$ does not
+        exceed $Q_r$.
+\end{enumerate}
+The objective is to minimise the makespan $\Cmax$.
+\end{definition}
+
+The resource constraints are what make RCPSP fundamentally harder
+than basic project scheduling.  Without resources, CPM schedules
+every job as early as possible---there is no conflict.  With
+resources, two jobs may both be ready to start, but starting
+them simultaneously would exceed a resource capacity.  We must
+choose which one goes first, and that choice affects all
+subsequent decisions.
+
+\begin{example}[RCPSP with two resources]
+\label{ex:rcpsp-seven}
+Take the seven-job instance from \cref{ex:seven-jobs} and add
+two resources with capacities $Q_1 = 4$, $Q_2 = 3$:
+
+\begin{figure}[H]
+\centering
+\begin{tabular}{lccccccc}
+\toprule
+\textbf{Job}      & 1 & 2 & 3 & 4 & 5 & 6 & 7 \\
+\midrule
+Duration $d_i$     & 3 & 3 & 1 & 4 & 2 & 1 & 3 \\
+$q_{i,1}$ (R1)     & 3 & 2 & 3 & 1 & 0 & 2 & 1 \\
+$q_{i,2}$ (R2)     & 0 & 2 & 1 & 2 & 2 & 1 & 2 \\
+\bottomrule
+\end{tabular}
+\caption{Resource demands for the seven-job RCPSP instance.}
+\label{fig:rcpsp-data}
+\end{figure}
+
+\noindent
+With CPM (ignoring resources), jobs~2 and~3 start simultaneously
+at time~3.  But job~2 needs 2~units of R1 and job~3 needs 3:
+together that is $2 + 3 = 5 > 4 = Q_1$.  They cannot run in
+parallel---we must choose.  This is a \textbf{choice point} that
+does not exist in the unconstrained version.
+\end{example}
+
+% ------------------------------------------------------------
+\subsection{Why RCPSP is hard}
+\label{ssec:rcpsp-hard}
+% ------------------------------------------------------------
+
+Each choice point roughly doubles the number of candidate
+schedules.  With $n$~jobs, the search space grows to approximately
+$2^n$ alternatives.%
+\aside{$2^n$ is a rough upper bound; the
+true number depends on the graph
+and resource constraints.}
+For $n = 100$, that is $2^{100} \approx 10^{30}$
+schedules---impossible to enumerate.
+
+RCPSP is $\NP$-hard.  The PSPlib benchmark library contains
+instances with 30, 60, 90, and 120~jobs;
+some 120-job instances remain \emph{unsolved to optimality}
+to this day.
+
+% ------------------------------------------------------------
+\subsection{Lower bound for RCPSP}
+\label{ssec:rcpsp-lower-bound}
+% ------------------------------------------------------------
+
+A natural lower bound: \textbf{ignore the resource constraints}
+and solve the resulting basic project scheduling problem with CPM\@.
+Since removing constraints can only improve (or maintain) the
+optimal value:
+\[
+  \Cmax^{\text{CPM}} \;\le\; \Cmax^{\text{RCPSP}*}.
+\]
+If a heuristic solution happens to match this bound, we know it
+is optimal.  Otherwise, the gap
+$\Cmax^{\text{heuristic}} - \Cmax^{\text{CPM}}$
+tells us how far we \emph{might} be from optimality (though the
+true optimum could lie anywhere in between).
+
+% ------------------------------------------------------------
+\subsection{Greedy heuristics for RCPSP}
+\label{ssec:rcpsp-greedy}
+% ------------------------------------------------------------
+
+A greedy heuristic for RCPSP extends the CPM idea:
+schedule one job at a time, choosing the \emph{earliest feasible}
+start that respects both precedences and resources.
+The question is: \textbf{which job to schedule next?}
+
+There are two main families of greedy rules:
+
+\paragraph{Time-based (schedule generation scheme).}
+Advance time instant by instant.  At each moment, identify all
+jobs that \emph{could} start (predecessors done, resources
+available) and pick one by a priority rule:
+longest processing time, shortest processing time, most resource
+demand, etc.
+
+\paragraph{Job-based (priority rule).}
+Maintain three sets:
+\begin{itemize}[nosep]
+  \item \emph{Scheduled}: jobs already placed.
+  \item \emph{Ready}: jobs whose predecessors are all scheduled.
+  \item \emph{Not ready}: at least one predecessor is unscheduled.
+\end{itemize}
+At each step, select a job from the \emph{ready} set by a
+priority rule, then find the earliest time at which it can start
+without violating resource capacities.
+
+\begin{remark}
+Because the greedy traverses a single path through the exponential
+search tree, different runs with different priority rules---or
+even random tie-breaking---can produce very different makespans.
+In the seven-job example, random restarts yielded solutions
+ranging from $\Cmax = 14$ to $\Cmax = 16$, against a CPM lower
+bound of~12.
+\end{remark}
+
+% ------------------------------------------------------------
+\subsection{RCPSP extensions}
+\label{ssec:rcpsp-extensions}
+% ------------------------------------------------------------
+
+Several extensions make the problem richer (and harder):
+
+\begin{itemize}
+  \item \textbf{Multi-mode RCPSP.}
+    Each job has several \emph{execution modes}, each with its own
+    duration and resource demands.
+    For instance, digging a trench might take 3~days with
+    3~workers, or 2~days with 1~worker and an excavator.
+    The decision now includes both \emph{when} and \emph{how}
+    to execute each job.
+
+  \item \textbf{Non-renewable resources.}
+    Resources that are \emph{consumed} (concrete, fuel, budget).
+    In the single-mode case, total consumption is fixed regardless
+    of schedule---feasibility reduces to checking whether the
+    total demand exceeds supply.  Combined with multiple modes,
+    however, the choice of mode affects consumption, making the
+    problem significantly harder.
+
+  \item \textbf{Preemption.}
+    A job may be \emph{interrupted} and resumed later, freeing
+    its resources for another job in the meantime.
+    Whether preemption is realistic depends on the application:
+    pausing a software build is easy; pausing a concrete pour
+    is not.
+
+  \item \textbf{Stochastic durations.}
+    Durations drawn from probability distributions.
+    Objectives become expected or worst-case makespan---this
+    variant belongs more to the Project Management course.
+\end{itemize}
+
+
+% ============================================================
+\section{Shop Scheduling Problems}
+\label{sec:shop-scheduling}
+% ============================================================
+
+We now introduce a family of scheduling problems where
+\emph{machines} (processors) are the central resource.
+These are called \textbf{shop scheduling} problems.%
+\aside{``Shop'' = workshop/factory floor,
+not a retail store.}
+
+The common setup: we have $n$ \emph{jobs} and $m$
+\emph{machines}.  Each job consists of a sequence of
+\emph{tasks} (also called \emph{operations}), where each task
+must be processed on a specific machine for a given duration.
+A machine can process at most one task at a time, and
+(unless stated otherwise) a task cannot be interrupted once started.
+
+% ------------------------------------------------------------
+\subsection{Job Shop Scheduling (JSS)}
+\label{ssec:job-shop}
+% ------------------------------------------------------------
+
+\begin{definition}[Job Shop Scheduling Problem]
+\label{def:job-shop}
+We are given:
+\begin{itemize}[nosep]
+  \item $n$ jobs, each consisting of an \emph{ordered} sequence
+        of tasks;
+  \item $m$ machines;
+  \item each task $T_{ij}$ (the $j$-th task of job~$i$) is
+        assigned to a specific machine $\mu_{ij}$ and has
+        duration $d_{ij}$;
+  \item (optionally) a \emph{release date} $r_i$ and a
+        \emph{due date} $\bar{d}_i$ for each job.
+\end{itemize}
+\textbf{Constraints:}
+\begin{enumerate}[nosep]
+  \item \emph{Precedence within each job:} the tasks of a job
+        must be processed in their given order.
+  \item \emph{Machine capacity:} each machine processes at most
+        one task at a time.
+  \item Release dates are hard constraints.
+\end{enumerate}
+\textbf{Objective:} minimise the makespan $\Cmax$, or minimise
+total \emph{tardiness} $\sum_i T_i$, where
+$T_i = \max(0,\; C_i - \bar{d}_i)$ is the delay of job~$i$
+past its due date.
+\end{definition}
+
+\begin{example}[A small job shop]
+\label{ex:job-shop-small}
+Three jobs on three machines:
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[
+    task/.style={draw=blue!60!black, fill=blue!8,
+                 minimum height=7mm, font=\small,
+                 rounded corners=1.5pt, anchor=west},
+    arr/.style={-Stealth, thick},
+    mlab/.style={font=\small\bfseries, anchor=east},
+    x=8mm, y=10mm
+  ]
+  % Job 1: M3 -> M2 -> M1
+  \node[mlab] at (-0.3, 3) {Job 1:};
+  \node[task, fill=red!10, minimum width=32mm] (j1t1) at (0, 3)
+    {\footnotesize $M_3$, $d=4$};
+  \node[task, fill=red!10, minimum width=16mm] (j1t2) at (4.5, 3)
+    {\footnotesize $M_2$, $d=2$};
+  \node[task, fill=red!10, minimum width=8mm] (j1t3) at (6.8, 3)
+    {\footnotesize $M_1$, $d=1$};
+  \draw[arr] (j1t1) -- (j1t2);
+  \draw[arr] (j1t2) -- (j1t3);
+
+  % Job 2: M1 -> M3
+  \node[mlab] at (-0.3, 2) {Job 2:};
+  \node[task, fill=green!10, minimum width=24mm] (j2t1) at (0, 2)
+    {\footnotesize $M_1$, $d=3$};
+  \node[task, fill=green!10, minimum width=24mm] (j2t2) at (3.5, 2)
+    {\footnotesize $M_3$, $d=3$};
+  \draw[arr] (j2t1) -- (j2t2);
+
+  % Job 3: M2 -> M1 -> M3
+  \node[mlab] at (-0.3, 1) {Job 3:};
+  \node[task, fill=yellow!15, minimum width=16mm] (j3t1) at (0, 1)
+    {\footnotesize $M_2$, $d=2$};
+  \node[task, fill=yellow!15, minimum width=32mm] (j3t2) at (2.5, 1)
+    {\footnotesize $M_1$, $d=4$};
+  \node[task, fill=yellow!15, minimum width=8mm] (j3t3) at (6.8, 1)
+    {\footnotesize $M_3$, $d=1$};
+  \draw[arr] (j3t1) -- (j3t2);
+  \draw[arr] (j3t2) -- (j3t3);
+\end{tikzpicture}
+\caption{Three jobs in a job shop.  Each row shows one job's
+         task sequence with its assigned machine and duration.
+         Arrows indicate precedence within the job.}
+\label{fig:job-shop-example}
+\end{figure}
+
+\noindent
+Job~1 visits machines $3 \to 2 \to 1$; job~2 visits $1 \to 3$;
+job~3 visits $2 \to 1 \to 3$.
+The scheduler must decide, for each machine, in what order to
+process the tasks assigned to it---without violating the
+within-job precedences.
+\end{example}
+
+% ------------------------------------------------------------
+\subsection{Flow Shop Scheduling (FSS)}
+\label{ssec:flow-shop}
+% ------------------------------------------------------------
+
+\begin{definition}[Flow Shop Scheduling Problem]
+\label{def:flow-shop}
+A special case of the job shop where \textbf{all jobs visit the
+machines in the same fixed order} $M_1 \to M_2 \to \cdots \to M_m$.
+Every job has exactly $m$~tasks (some may have duration zero).
+\end{definition}
+
+The crucial simplification: since the machine order is
+identical for every job, the \emph{only} decision is the
+\textbf{permutation} (sequence) in which jobs enter the shop.%
+\aside{If all machines use the same permutation, we have a
+\emph{permutation flow shop}---the most common variant.}
+Once the permutation is fixed, start times follow
+deterministically: each task starts as soon as both its machine
+is free and the previous task of the same job is finished.
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[
+    x=5mm, y=8mm,
+    block/.style={draw, minimum height=6mm,
+                  rounded corners=1pt, anchor=west,
+                  font=\footnotesize},
+    mlab/.style={font=\small\bfseries, anchor=east}
+  ]
+  % Machine labels
+  \node[mlab] at (-0.5, 3) {$M_1$};
+  \node[mlab] at (-0.5, 2) {$M_2$};
+  \node[mlab] at (-0.5, 1) {$M_3$};
+
+  % Job 3 (first in permutation)
+  \node[block, fill=yellow!20, minimum width=15mm]
+    (j3m1) at (0, 3) {$J_3$};
+  \node[block, fill=yellow!20, minimum width=10mm]
+    (j3m2) at (3, 2) {$J_3$};
+  \node[block, fill=yellow!20, minimum width=10mm]
+    (j3m3) at (4, 1) {$J_3$};
+
+  % Job 1 (second)
+  \node[block, fill=red!15, minimum width=10mm]
+    (j1m1) at (3, 3) {$J_1$};
+  \node[block, fill=red!15, minimum width=15mm]
+    (j1m2) at (5, 2) {$J_1$};
+  \node[block, fill=red!15, minimum width=10mm]
+    (j1m3) at (8, 1) {$J_1$};
+
+  % Job 2 (third)
+  \node[block, fill=green!15, minimum width=10mm]
+    (j2m1) at (5, 3) {$J_2$};
+  \node[block, fill=green!15, minimum width=5mm]
+    (j2m2) at (8, 2) {$J_2$};
+  \node[block, fill=green!15, minimum width=15mm]
+    (j2m3) at (10, 1) {$J_2$};
+
+  % idle gap annotation
+  \draw[decorate, decoration={brace, amplitude=3pt, mirror},
+        gray]
+    (5, 0.6) -- (8, 0.6)
+    node[midway, below=4pt, font=\scriptsize\itshape, text=gray]
+    {$M_3$ idle};
+
+  % time axis
+  \draw[-Stealth, gray] (-0.5, 0.2) -- (13, 0.2)
+    node[right, font=\footnotesize] {time};
+\end{tikzpicture}
+\caption{A flow shop Gantt chart for the permutation
+         $J_3, J_1, J_2$.  Machine~$M_3$ sits idle between
+         $J_3$ and~$J_1$ because it must wait for $J_1$ to
+         finish on~$M_2$.  A different permutation might reduce
+         this idle time.}
+\label{fig:flow-shop-gantt}
+\end{figure}
+
+\noindent
+The goal is to find the permutation that minimises idle gaps and
+thus the makespan.  Despite this structural simplification, the
+flow shop with $m \ge 3$ machines is $\NP$-hard.
+
+% ------------------------------------------------------------
+\subsection{Open Shop Scheduling (OSS)}
+\label{ssec:open-shop}
+% ------------------------------------------------------------
+
+\begin{definition}[Open Shop Scheduling Problem]
+\label{def:open-shop}
+Like the job shop, but with \textbf{no fixed ordering} of tasks
+within a job.  Each job still has one task per machine, but the
+scheduler is free to choose in which order a job visits the
+machines.
+\end{definition}
+
+In the open shop, the within-job precedences disappear entirely.
+What ties a job's tasks together are its release date and due
+date: all tasks of a job must start after its release and finish
+before its deadline.  The scheduler must decide both the
+\emph{order of tasks within each job} and the \emph{order of
+jobs on each machine}.
+
+\medskip
+\begin{center}
+\begin{tabular}{lccc}
+\toprule
+ & \textbf{Machine order} & \textbf{Decision variable}
+ & \textbf{Complexity} \\
+\midrule
+Job shop  & job-specific, fixed
+          & start time of each task
+          & $\NP$-hard \\
+Flow shop & same for all jobs
+          & job permutation
+          & $\NP$-hard ($m \ge 3$) \\
+Open shop & free
+          & task order + start times
+          & $\NP$-hard ($m \ge 3$) \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\begin{intermezzo}{Make as a project scheduler}
+When you type \texttt{make} to compile a C++ project, the build
+tool reads the dependency graph from the Makefile and solves a
+project scheduling problem: each compilation command is a job,
+its duration is the compilation time, and ``\texttt{A.o} depends
+on \texttt{A.cc}'' is a precedence constraint.
+
+With \texttt{make -j} (parallel mode), Make schedules independent
+compilations on separate CPU cores---exactly the CPM forward
+strategy.  In a classroom demo, a synthetic Makefile encoding the
+seven-job instance from \cref{ex:seven-jobs} (using \texttt{sleep}
+to simulate durations) completed in 12~seconds with
+\texttt{make -j}, matching the CPM makespan, versus 16~seconds
+in sequential mode.
+\end{intermezzo}

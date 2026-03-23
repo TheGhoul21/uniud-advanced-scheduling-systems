@@ -1,0 +1,77 @@
+SKILLS = 4
+HeadNurse
+Nurse
+Caretaker
+Trainee
+
+SHIFT_TYPES = 4
+Early 0
+Day 0
+Late 2 Early Day
+Night 3 Early Day Late
+
+CONTRACTS = 3
+FullTime (4,6) 1
+PartTime (2,4) 1
+HalfTime (2,3) 0
+
+NURSES = 21
+HN_0 FullTime 3 HeadNurse Nurse Caretaker
+HN_1 PartTime 3 HeadNurse Nurse Caretaker
+HN_2 PartTime 3 HeadNurse Nurse Caretaker
+NU_3 HalfTime 2 Nurse Caretaker
+NU_4 PartTime 2 Nurse Caretaker
+NU_5 PartTime 2 Nurse Caretaker
+NU_6 HalfTime 2 Nurse Caretaker
+NU_7 HalfTime 2 Nurse Caretaker
+NU_8 FullTime 2 Nurse Caretaker
+NU_9 PartTime 2 Nurse Caretaker
+NU_10 HalfTime 2 Nurse Caretaker
+CT_11 PartTime 1 Caretaker
+CT_12 PartTime 1 Caretaker
+CT_13 PartTime 1 Caretaker
+CT_14 HalfTime 1 Caretaker
+CT_15 HalfTime 1 Caretaker
+TR_16 PartTime 1 Trainee
+TR_17 HalfTime 1 Trainee
+TR_18 FullTime 1 Trainee
+TR_19 PartTime 1 Trainee
+TR_20 PartTime 1 Trainee
+
+REQUIREMENTS
+Early HeadNurse (1,1) (0,0) (0,0) (1,1) (0,0) (0,0) (0,0)
+Early Nurse (1,1) (1,1) (1,1) (1,1) (1,1) (1,1) (1,1)
+Early Caretaker (1,2) (1,1) (1,1) (1,2) (1,1) (1,1) (0,1)
+Early Trainee (1,1) (1,1) (0,0) (1,1) (0,0) (1,1) (0,0)
+Day HeadNurse (0,0) (0,0) (0,0) (0,0) (0,0) (0,0) (0,0)
+Day Nurse (1,1) (1,1) (1,1) (1,1) (1,1) (1,1) (1,1)
+Day Caretaker (1,1) (1,1) (0,0) (1,2) (1,1) (0,0) (0,1)
+Day Trainee (1,1) (1,1) (0,1) (1,1) (0,1) (1,1) (0,0)
+Late HeadNurse (0,0) (0,0) (0,0) (0,0) (0,0) (0,0) (0,0)
+Late Nurse (1,1) (1,1) (1,1) (1,1) (1,1) (1,1) (1,1)
+Late Caretaker (0,0) (1,2) (1,2) (1,2) (1,1) (1,1) (1,2)
+Late Trainee (1,1) (0,0) (1,1) (0,0) (0,0) (1,1) (0,1)
+Night HeadNurse (0,0) (0,0) (1,1) (0,0) (0,0) (0,0) (0,0)
+Night Nurse (1,1) (1,1) (1,1) (1,1) (1,1) (1,1) (1,1)
+Night Caretaker (1,2) (1,1) (1,2) (1,2) (0,2) (1,1) (0,0)
+Night Trainee (0,1) (0,1) (0,1) (0,0) (1,1) (0,1) (0,0)
+
+SHIFT_OFF_REQUESTS = 18
+CT_13 Night Tue 
+NU_8 Night Tue 
+CT_12 Night Wed 
+NU_9 Any Wed 
+HN_1 Day Thu 
+TR_17 Any Thu 
+HN_2 Any Fri 
+NU_7 Any Fri 
+NU_9 Any Fri 
+TR_16 Day Fri 
+CT_13 Day Sat 
+CT_14 Any Sat 
+HN_0 Any Sat 
+TR_18 Day Sat 
+CT_14 Late Sun 
+CT_15 Day Sun 
+NU_3 Late Sun 
+TR_19 Late Sun 

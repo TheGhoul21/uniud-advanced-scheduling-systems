@@ -1,0 +1,22 @@
+project:
+  type: website
+  output-dir: _site
+
+website:
+  title: "Advanced Scheduling Systems — UniUD"
+  navbar:
+    left:
+      - text: "Home"
+        href: index.qmd
+      - text: "CPM"
+        href: notebooks/01-cpm.qmd
+      - text: "Knapsack"
+        href: notebooks/02-knapsack.qmd
+      - text: "DSatur"
+        href: notebooks/03-dsatur.qmd
+
+format:
+  html:
+    theme: cosmo
+    toc: true
+    toc-depth: 3

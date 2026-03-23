@@ -1,0 +1,514 @@
+---
+title: "Critical Path Method (CPM)"
+subtitle: "Interactive visualizations for Chapter 1 of the Advanced Scheduling Systems notes"
+engine: knitr
+format:
+  live-html:
+    theme: cosmo
+    toc: true
+    toc-depth: 3
+    pyodide:
+      packages:
+        - matplotlib
+        - numpy
+      cell-options:
+        autorun: true
+        edit: false
+        echo: false
+---
+
+# Critical Path Method (CPM)
+
+The **Critical Path Method** finds the shortest possible duration for a project whose jobs have precedence constraints.
+Each job $i$ has a processing time $p_i$ and cannot start until all its predecessors finish.
+
+The algorithm works in two passes over the precedence DAG:
+
+1. **Forward pass** (topological order): compute the earliest start $S_i = \max_{k \to i} C_k$ and earliest completion $C_i = S_i + p_i$ for each job.
+2. **Backward pass** (reverse topological order): compute the latest completion $\bar{C}_i = \min_{i \to j} \bar{S}_j$ and latest start $\bar{S}_i = \bar{C}_i - p_i$.
+
+A job is **critical** when $S_i = \bar{S}_i$ (equivalently $C_i = \bar{C}_i$): it has zero slack and any delay on it delays the entire project. The **critical path** is the longest path through the DAG.
+
+```{pyodide}
+#| autorun: true
+#| edit: false
+#| output: false
+
+import warnings
+import matplotlib.pyplot as plt
+import matplotlib.patches as mpatches
+import numpy as np
+from collections import deque
+from matplotlib.lines import Line2D
+
+warnings.filterwarnings("ignore", message=".*tight_layout.*")
+
+plt.rcParams.update({
+    "font.family": "monospace",
+    "font.size": 13,
+    "figure.facecolor": "#fafafa",
+    "figure.dpi": 120,
+    "savefig.dpi": 120,
+})
+
+COLORS = {
+    "unprocessed": "#E0E0E0",
+    "processed":   "#64B5F6",
+    "current":     "#FFA726",
+    "critical":    "#66BB6A",
+    "edge":        "#BDBDBD",
+    "edge_active": "#FFA726",
+    "edge_critical":"#66BB6A",
+    "border":      "#555555",
+    "text":        "#333333",
+    "bg":          "#fafafa",
+}
+
+# --------------- graph helpers ---------------
+
+def parse_instance(durations_str, edges_str):
+    durations = list(map(int, durations_str.replace(",", " ").split()))
+    n = len(durations)
+    edges = []
+    for tok in edges_str.replace(",", " ").split():
+        for sep in ["->", ">", "-"]:
+            if sep in tok:
+                a, b = tok.split(sep, 1)
+                edges.append((int(a), int(b)))
+                break
+    return durations, edges
+
+
+def topo_sort(n, edges):
+    adj = {i: [] for i in range(1, n + 1)}
+    indeg = {i: 0 for i in range(1, n + 1)}
+    for u, v in edges:
+        adj[u].append(v)
+        indeg[v] += 1
+    q = deque(i for i in range(1, n + 1) if indeg[i] == 0)
+    order = []
+    while q:
+        u = q.popleft()
+        order.append(u)
+        for v in sorted(adj[u]):
+            indeg[v] -= 1
+            if indeg[v] == 0:
+                q.append(v)
+    return order
+
+
+def compute_cpm(durations, edges):
+    n = len(durations)
+    p = {i: durations[i - 1] for i in range(1, n + 1)}
+    preds = {i: [] for i in range(1, n + 1)}
+    succs = {i: [] for i in range(1, n + 1)}
+    for u, v in edges:
+        preds[v].append(u)
+        succs[u].append(v)
+    order = topo_sort(n, edges)
+    S = {}
+    C = {}
+    for i in order:
+        S[i] = max((C[k] for k in preds[i]), default=0)
+        C[i] = S[i] + p[i]
+    C_max = max(C.values())
+    S_bar = {}
+    C_bar = {}
+    for i in reversed(order):
+        C_bar[i] = min((S_bar[j] for j in succs[i]), default=C_max)
+        S_bar[i] = C_bar[i] - p[i]
+    critical = {i for i in range(1, n + 1) if S[i] == S_bar[i]}
+    return order, p, preds, succs, S, C, S_bar, C_bar, C_max, critical
+
+
+# --------------- layout ---------------
+
+def layered_layout(n, edges):
+    preds = {i: [] for i in range(1, n + 1)}
+    for u, v in edges:
+        preds[v].append(u)
+    order = topo_sort(n, edges)
+    layer = {}
+    for i in order:
+        layer[i] = max((layer[k] + 1 for k in preds[i]), default=0)
+    layers = {}
+    for i, l in layer.items():
+        layers.setdefault(l, []).append(i)
+    pos = {}
+    for l, nodes in layers.items():
+        nodes.sort()
+        count = len(nodes)
+        for idx, nd in enumerate(nodes):
+            x = l * 2.5
+            y = (idx - (count - 1) / 2) * 2.0
+            pos[nd] = (x, y)
+    return pos
+
+
+# --------------- drawing helpers ---------------
+
+def draw_node(ax, x, y, label, sublabel, color, border_color=COLORS["border"], radius=0.45):
+    circle = plt.Circle((x, y), radius, facecolor=color,
+                         edgecolor=border_color, linewidth=2, zorder=3)
+    ax.add_patch(circle)
+    ax.text(x, y + (0.06 if sublabel else 0), label,
+            ha="center", va="center", fontsize=13, fontweight="bold",
+            color=COLORS["text"], zorder=4)
+    if sublabel:
+        ax.text(x, y - 0.18, sublabel,
+                ha="center", va="center", fontsize=8,
+                color="#666", zorder=4)
+
+
+def draw_edge(ax, x1, y1, x2, y2, color=COLORS["edge"], lw=1.5, style="-"):
+    dx, dy = x2 - x1, y2 - y1
+    dist = np.hypot(dx, dy)
+    if dist < 1e-6:
+        return
+    ux, uy = dx / dist, dy / dist
+    r = 0.48
+    sx, sy = x1 + ux * r, y1 + uy * r
+    ex, ey = x2 - ux * r, y2 - uy * r
+    ax.annotate("", xy=(ex, ey), xytext=(sx, sy),
+                arrowprops=dict(arrowstyle="-|>", color=color,
+                                lw=lw, linestyle=style,
+                                shrinkA=0, shrinkB=0),
+                zorder=2)
+
+
+def draw_table(ax, headers, rows, col_widths=None, title=""):
+    ax.axis("off")
+    n_cols = len(headers)
+    n_rows = len(rows)
+    if col_widths is None:
+        col_widths = [1.0 / n_cols] * n_cols
+    table = ax.table(
+        cellText=rows,
+        colLabels=headers,
+        colWidths=col_widths,
+        loc="center",
+        cellLoc="center",
+    )
+    table.auto_set_font_size(False)
+    table.set_fontsize(11)
+    table.scale(1, 1.5)
+    for j in range(n_cols):
+        cell = table[0, j]
+        cell.set_facecolor("#455A64")
+        cell.set_text_props(color="white", fontweight="bold")
+    for i in range(1, n_rows + 1):
+        for j in range(n_cols):
+            cell = table[i, j]
+            cell.set_facecolor("#FAFAFA" if i % 2 == 1 else "#ECEFF1")
+    if title:
+        ax.set_title(title, fontsize=12, fontweight="bold", pad=10)
+    return table
+
+# Instance
+DURATIONS_STR = "3 3 1 4 2 1 3"
+EDGES_STR = "1->2 1->3 2->4 3->5 4->6 5->6 4->7 5->7"
+durations, edges = parse_instance(DURATIONS_STR, EDGES_STR)
+n = len(durations)
+order, p, preds, succs, S, C, S_bar, C_bar, C_max, critical = compute_cpm(durations, edges)
+pos = layered_layout(n, edges)
+```
+
+## The Precedence DAG
+
+The graph below shows the 7 jobs and their precedence constraints. Each node shows the job number and its processing time.
+
+```{pyodide}
+#| autorun: true
+#| edit: false
+
+fig, ax = plt.subplots(figsize=(11, 5))
+xs = [pos[i][0] for i in range(1, n + 1)]
+ys = [pos[i][1] for i in range(1, n + 1)]
+margin = 1.2
+ax.set_xlim(min(xs) - margin, max(xs) + margin)
+ax.set_ylim(min(ys) - margin, max(ys) + margin)
+ax.set_aspect("equal")
+ax.axis("off")
+
+for u, v in edges:
+    x1, y1 = pos[u]
+    x2, y2 = pos[v]
+    draw_edge(ax, x1, y1, x2, y2, color=COLORS["edge"], lw=1.5)
+
+for i in range(1, n + 1):
+    x, y = pos[i]
+    draw_node(ax, x, y, str(i), f"p={p[i]}", COLORS["unprocessed"])
+
+ax.set_title("Precedence DAG  (7 jobs)", fontsize=13, fontweight="bold", pad=12)
+plt.tight_layout()
+plt.show()
+```
+
+## Forward Pass
+
+Process each job in **topological order**. For each job $i$:
+
+- Earliest start: $S_i = \max_{k \in \text{pred}(i)} C_k$ (or 0 if no predecessors).
+- Earliest completion: $C_i = S_i + p_i$.
+
+The step-by-step forward pass is shown below. Each panel highlights the job being processed (orange) and the jobs already processed (blue).
+
+```{pyodide}
+#| autorun: true
+#| edit: false
+
+n_steps = len(order)
+fig, axes = plt.subplots(2, 4, figsize=(16, 8))
+axes = axes.flatten()
+
+for step_idx in range(n_steps):
+    ax = axes[step_idx]
+    processed = set(order[:step_idx + 1])
+    current = order[step_idx]
+
+    xs = [pos[i][0] for i in range(1, n + 1)]
+    ys = [pos[i][1] for i in range(1, n + 1)]
+    margin = 1.2
+    ax.set_xlim(min(xs) - margin, max(xs) + margin)
+    ax.set_ylim(min(ys) - margin, max(ys) + margin)
+    ax.set_aspect("equal")
+    ax.axis("off")
+
+    for u, v in edges:
+        x1, y1 = pos[u]
+        x2, y2 = pos[v]
+        if v == current and u in processed:
+            ec = COLORS["edge_active"]; elw = 2.5
+        elif u in processed and v in processed:
+            ec = COLORS["processed"]; elw = 1.8
+        else:
+            ec = COLORS["edge"]; elw = 1.2
+        draw_edge(ax, x1, y1, x2, y2, color=ec, lw=elw)
+
+    for i in range(1, n + 1):
+        x, y = pos[i]
+        if i == current:
+            nc = COLORS["current"]
+        elif i in processed:
+            nc = COLORS["processed"]
+        else:
+            nc = COLORS["unprocessed"]
+        draw_node(ax, x, y, str(i), f"p={p[i]}", nc)
+        if i in processed:
+            ax.text(x, y + 0.65, f"S={S[i]} C={C[i]}",
+                    ha="center", va="bottom", fontsize=7,
+                    color=COLORS["text"], fontweight="bold",
+                    bbox=dict(boxstyle="round,pad=0.1", facecolor="white",
+                              edgecolor="#ccc", alpha=0.9))
+
+    i = current
+    pred_list = preds[i]
+    if pred_list:
+        pred_info = ", ".join(f"C{k}={C[k]}" for k in pred_list)
+        status = f"Job {i}: S={S[i]} C={C[i]}"
+    else:
+        status = f"Job {i}: S=0 C={C[i]}"
+    ax.set_title(status, fontsize=9, fontweight="bold", pad=6,
+                 color=COLORS["current"])
+
+# Hide unused subplot
+axes[7].axis("off")
+fig.suptitle("Forward Pass  --  step by step", fontsize=14, fontweight="bold", y=1.01)
+plt.tight_layout()
+plt.show()
+```
+
+### Forward Pass Results
+
+```{pyodide}
+#| autorun: true
+#| edit: false
+
+fig, ax = plt.subplots(figsize=(10, 2.5))
+headers = ["Job"] + [str(i) for i in order]
+row_p = ["p_i"] + [str(p[i]) for i in order]
+row_s = ["S_i"] + [str(S[i]) for i in order]
+row_c = ["C_i"] + [str(C[i]) for i in order]
+draw_table(ax, headers, [row_p, row_s, row_c], title="Forward Pass Results")
+plt.tight_layout()
+plt.show()
+```
+
+## Backward Pass
+
+Process each job in **reverse topological order**. For each job $i$:
+
+- Latest completion: $\bar{C}_i = \min_{j \in \text{succ}(i)} \bar{S}_j$ (or $C_{\max}$ if no successors).
+- Latest start: $\bar{S}_i = \bar{C}_i - p_i$.
+
+The backward pass tells us how much each job can be delayed without increasing the makespan.
+
+```{pyodide}
+#| autorun: true
+#| edit: false
+
+rev_order = list(reversed(order))
+
+fig, axes = plt.subplots(2, 4, figsize=(16, 8))
+axes = axes.flatten()
+
+for step_idx in range(n):
+    ax = axes[step_idx]
+    processed_bwd = set(rev_order[:step_idx + 1])
+    current = rev_order[step_idx]
+
+    xs = [pos[i][0] for i in range(1, n + 1)]
+    ys = [pos[i][1] for i in range(1, n + 1)]
+    margin = 1.2
+    ax.set_xlim(min(xs) - margin, max(xs) + margin)
+    ax.set_ylim(min(ys) - margin, max(ys) + margin)
+    ax.set_aspect("equal")
+    ax.axis("off")
+
+    for u, v in edges:
+        x1, y1 = pos[u]
+        x2, y2 = pos[v]
+        if u == current and v in processed_bwd:
+            ec = COLORS["edge_active"]; elw = 2.5
+        elif u in processed_bwd and v in processed_bwd:
+            ec = COLORS["processed"]; elw = 1.8
+        else:
+            ec = COLORS["edge"]; elw = 1.2
+        draw_edge(ax, x1, y1, x2, y2, color=ec, lw=elw)
+
+    for i in range(1, n + 1):
+        x, y = pos[i]
+        if i == current:
+            nc = COLORS["current"]
+        elif i in processed_bwd:
+            nc = COLORS["processed"]
+        else:
+            nc = COLORS["unprocessed"]
+        draw_node(ax, x, y, str(i), f"p={p[i]}", nc)
+        if i in processed_bwd:
+            ax.text(x, y + 0.65, f"Sb={S_bar[i]} Cb={C_bar[i]}",
+                    ha="center", va="bottom", fontsize=7,
+                    color=COLORS["text"], fontweight="bold",
+                    bbox=dict(boxstyle="round,pad=0.1", facecolor="white",
+                              edgecolor="#ccc", alpha=0.9))
+        ax.text(x, y - 0.65, f"S={S[i]} C={C[i]}",
+                ha="center", va="top", fontsize=6, color="#999",
+                bbox=dict(boxstyle="round,pad=0.08", facecolor="white",
+                          edgecolor="#eee", alpha=0.7))
+
+    i = current
+    succ_list = succs[i]
+    if succ_list:
+        status = f"Job {i}: Sb={S_bar[i]} Cb={C_bar[i]}"
+    else:
+        status = f"Job {i}: Cb=Cmax={C_max}, Sb={S_bar[i]}"
+    ax.set_title(status, fontsize=9, fontweight="bold", pad=6,
+                 color=COLORS["current"])
+
+axes[7].axis("off")
+fig.suptitle("Backward Pass  --  step by step", fontsize=14, fontweight="bold", y=1.01)
+plt.tight_layout()
+plt.show()
+```
+
+### Backward Pass Results
+
+```{pyodide}
+#| autorun: true
+#| edit: false
+
+fig, ax = plt.subplots(figsize=(10, 3.5))
+headers = ["Job"] + [str(i) for i in order]
+row_p    = ["p_i"]     + [str(p[i]) for i in order]
+row_s    = ["S_i"]     + [str(S[i]) for i in order]
+row_c    = ["C_i"]     + [str(C[i]) for i in order]
+row_sbar = ["S_bar_i"] + [str(S_bar[i]) for i in order]
+row_cbar = ["C_bar_i"] + [str(C_bar[i]) for i in order]
+row_slack = ["Slack"]  + [str(S_bar[i] - S[i]) for i in order]
+draw_table(ax, headers, [row_p, row_s, row_c, row_sbar, row_cbar, row_slack],
+           title="Complete CPM Table")
+
+# Highlight critical columns
+table = ax.tables[0]
+for idx_col, i in enumerate(order):
+    if i in critical:
+        col = idx_col + 1
+        for row_idx in range(7):
+            cell = table[row_idx, col]
+            cell.set_facecolor("#E8F5E9")
+            cell.set_edgecolor("#66BB6A")
+
+plt.tight_layout()
+plt.show()
+```
+
+## Critical Path
+
+A job $i$ is **critical** when its slack is zero: $S_i = \bar{S}_i$ (equivalently, $C_i = \bar{C}_i$).
+The critical path is the longest path through the DAG; its total duration equals $C_{\max}$.
+Any delay on a critical job delays the entire project.
+
+```{pyodide}
+#| autorun: true
+#| edit: false
+
+fig, ax = plt.subplots(figsize=(12, 6))
+xs = [pos[i][0] for i in range(1, n + 1)]
+ys = [pos[i][1] for i in range(1, n + 1)]
+margin = 1.2
+ax.set_xlim(min(xs) - margin, max(xs) + margin)
+ax.set_ylim(min(ys) - margin, max(ys) + margin)
+ax.set_aspect("equal")
+ax.axis("off")
+
+# Draw edges
+for u, v in edges:
+    x1, y1 = pos[u]
+    x2, y2 = pos[v]
+    if u in critical and v in critical and C[u] == S[v]:
+        ec = COLORS["edge_critical"]; elw = 3.5
+    else:
+        ec = COLORS["edge"]; elw = 1.2
+    draw_edge(ax, x1, y1, x2, y2, color=ec, lw=elw)
+
+# Draw nodes
+for i in range(1, n + 1):
+    x, y = pos[i]
+    if i in critical:
+        nc = COLORS["critical"]; bc = "#2E7D32"
+    else:
+        nc = COLORS["processed"]; bc = COLORS["border"]
+    slack = S_bar[i] - S[i]
+    draw_node(ax, x, y, str(i), f"p={p[i]}", nc, border_color=bc)
+    ax.text(x, y + 0.65, f"[{S[i]}, {C[i]}]",
+            ha="center", va="bottom", fontsize=9,
+            color="#2E7D32" if i in critical else COLORS["text"],
+            fontweight="bold",
+            bbox=dict(boxstyle="round,pad=0.15", facecolor="white",
+                      edgecolor="#2E7D32" if i in critical else "#ccc",
+                      alpha=0.9))
+    ax.text(x, y - 0.65, f"slack={slack}",
+            ha="center", va="top", fontsize=8,
+            color="#2E7D32" if slack == 0 else "#999",
+            fontweight="bold" if slack == 0 else "normal")
+
+crit_str = " -> ".join(str(i) for i in order if i in critical)
+ax.set_title(f"Critical path: {crit_str}    |    Cmax = {C_max}",
+             fontsize=13, fontweight="bold", pad=12, color="#2E7D32")
+
+legend_elements = [
+    Line2D([0], [0], marker="o", color="w", markerfacecolor=COLORS["critical"],
+           markersize=12, markeredgecolor="#2E7D32", markeredgewidth=2,
+           label="Critical job (slack=0)"),
+    Line2D([0], [0], marker="o", color="w", markerfacecolor=COLORS["processed"],
+           markersize=12, markeredgecolor=COLORS["border"], markeredgewidth=2,
+           label="Non-critical job"),
+    Line2D([0], [0], color=COLORS["edge_critical"], lw=3, label="Critical edge"),
+    Line2D([0], [0], color=COLORS["edge"], lw=1.2, label="Non-critical edge"),
+]
+ax.legend(handles=legend_elements, loc="lower right", fontsize=9,
+          framealpha=0.9, edgecolor="#ccc")
+
+plt.tight_layout()
+plt.show()
+```

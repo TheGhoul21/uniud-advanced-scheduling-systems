@@ -1,0 +1,543 @@
+% ============================================================
+%  Lecture 5 — C++ recap & software architecture for optimisation
+% ============================================================
+
+\section{C++ Recap}
+\label{sec:cpp-recap}
+
+From this point on we \emph{implement} the algorithms we study.
+The language is C++ (compiled with \texttt{g++} or
+\texttt{clang++}).
+This section recaps the OOP features we rely on; students
+comfortable with all of them can skip ahead to
+\cref{sec:solver-architecture}.
+
+% ------------------------------------------------------------
+\subsection{Encapsulation and information hiding}
+\label{ssec:encapsulation}
+% ------------------------------------------------------------
+
+A \textbf{class} bundles \emph{data members} (the state) and
+\emph{methods} (the operations on that state) into a single unit.
+Access control enforces \emph{information hiding}:
+
+\begin{itemize}[nosep]
+  \item \texttt{private} (default for \texttt{class}):
+    accessible only within the class itself.
+  \item \texttt{protected}: accessible within the class and its
+    subclasses.
+  \item \texttt{public}: accessible from anywhere.
+\end{itemize}
+
+\begin{lstlisting}[language=C++, caption={Basic class layout.}]
+class Graph {
+public:                     // interface
+  Graph(string file_name);  // constructor
+  unsigned Nodes() const { return nodes; }
+  bool Arc(unsigned i, unsigned j) const;
+protected:                  // internal state
+  unsigned nodes;
+  vector<vector<bool>> adjacency_matrix;
+};
+\end{lstlisting}
+
+\noindent
+The \texttt{const} qualifier on \texttt{Nodes()} promises that
+calling it does not modify the object---a crucial contract for
+readers of the code and for the compiler's optimiser.
+
+% ------------------------------------------------------------
+\subsection{Constructors}
+\label{ssec:constructors}
+% ------------------------------------------------------------
+
+A \textbf{constructor} initialises an object when it is created.
+It has the same name as the class and no return type.
+For our optimisation code, the constructor typically reads an
+instance from a file:
+
+\begin{lstlisting}[language=C++, caption={Constructor that reads
+  from a file.}]
+Graph::Graph(string file_name) {
+  ifstream is(file_name);
+  if (!is) {
+    cerr << "Could not open " << file_name << endl;
+    exit(1);
+  }
+  // ... parse the file and fill data members ...
+}
+\end{lstlisting}
+
+% ------------------------------------------------------------
+\subsection{File I/O: \texttt{ifstream} and \texttt{ofstream}}
+\label{ssec:file-io}
+% ------------------------------------------------------------
+
+The standard library provides \texttt{ifstream} (input) and
+\texttt{ofstream} (output) in \texttt{<fstream>}.
+They behave like \texttt{cin}/\texttt{cout} but read from / write
+to files:
+
+\begin{lstlisting}[language=C++, caption={Reading and writing files.}]
+#include <fstream>
+
+ifstream is("instance.txt");   // open for reading
+unsigned n;
+is >> n;                       // read an integer
+
+ofstream os("solution.txt");   // open for writing
+os << "makespan = " << cmax << endl;
+\end{lstlisting}
+
+% ------------------------------------------------------------
+\subsection{The \texttt{vector} container}
+\label{ssec:vector}
+% ------------------------------------------------------------
+
+\texttt{std::vector<T>} is a dynamically-sized array.  We use it
+everywhere instead of raw C arrays:
+
+\begin{lstlisting}[language=C++, caption={Common \texttt{vector}
+  operations.}]
+vector<int> v(10, 0);        // 10 elements, all zero
+v.push_back(42);             // append
+v.size();                    // current length
+v[3] = 7;                    // random access (no bounds check)
+
+// 2D: vector of vectors
+vector<vector<bool>> matrix(n, vector<bool>(n, false));
+\end{lstlisting}
+
+\noindent
+For adjacency matrices we use
+\texttt{vector<vector<bool>{}>} (compact, random access);
+for adjacency lists, \texttt{vector<vector<unsigned>{}>}
+(compact, iteration-friendly).
+
+
+% ============================================================
+\section{Software Architecture for Optimisation}
+\label{sec:solver-architecture}
+% ============================================================
+
+Every solver we build in this course follows the same three-module
+architecture:%
+\aside{Separating I/O from the solver
+lets us swap algorithms without
+touching file-parsing code.}
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[
+    box/.style={draw=blue!60!black, fill=blue!6,
+                rounded corners=3pt, minimum width=28mm,
+                minimum height=12mm, font=\small\bfseries,
+                align=center},
+    arr/.style={-Stealth, thick, blue!60!black},
+    x=42mm, y=16mm
+  ]
+  \node[box] (inp) at (0, 0) {Input\\(\texttt{Data})};
+  \node[box] (sol) at (1, 0) {Solver};
+  \node[box] (out) at (2, 0) {Output\\(\texttt{Solution})};
+
+  \draw[arr] (inp) -- (sol) node[midway, above,
+    font=\footnotesize] {reads};
+  \draw[arr] (sol) -- (out) node[midway, above,
+    font=\footnotesize] {writes};
+
+  % file labels
+  \node[font=\footnotesize\itshape, text=gray, below=4mm of inp]
+    {instance file};
+  \node[font=\footnotesize\itshape, text=gray, below=4mm of out]
+    {solution file};
+\end{tikzpicture}
+\caption{Three-module architecture.  The \textbf{Input} class
+         reads the instance file and stores the problem data.
+         The \textbf{Solver} reads from Input and writes into
+         a \textbf{Solution} object.  The Solution class handles
+         output formatting.}
+\label{fig:three-module}
+\end{figure}
+
+\begin{enumerate}
+  \item \textbf{Input / Data class.}
+    Reads and stores the instance.  Provides read-only accessors
+    (\texttt{const} methods) so that the solver cannot
+    accidentally modify the input.
+
+  \item \textbf{Output / Solution class.}
+    Stores the current solution and provides operators for
+    modifying and printing it.
+
+  \item \textbf{Solver.}
+    Contains the algorithm logic.  It receives a \texttt{const}
+    reference to the Input and produces a Solution.
+    Swapping solvers (greedy, backtracking, local search) requires
+    no changes to the I/O classes.
+\end{enumerate}
+
+This separation is not just good software engineering---it is
+essential when comparing multiple algorithms on the same
+instances, which is exactly what the course project requires.
+
+
+% ============================================================
+\section{Example: Graph Colouring I/O Classes}
+\label{sec:gc-data}
+% ============================================================
+
+We illustrate the architecture on the graph colouring problem.
+The two files \texttt{GC\_Data.hh} (header) and
+\texttt{GC\_Data.cc} (implementation) define the Input and Output
+classes.
+
+% ------------------------------------------------------------
+\subsection{The \texttt{Graph} class (Input)}
+\label{ssec:graph-class}
+% ------------------------------------------------------------
+
+\begin{lstlisting}[language=C++,
+  caption={\texttt{GC\_Data.hh} --- the \texttt{Graph} class
+           (input data).},
+  label={lst:gc-data-hh-graph}]
+class Graph {
+  friend ostream& operator<<(ostream& os, const Graph& g);
+public:
+  Graph(string file_name);
+  unsigned Nodes()   const { return nodes; }
+  unsigned Colors()  const { return colors; }
+  bool Arc(unsigned i, unsigned j) const
+    { return adjacency_matrix[i][j]; }
+  unsigned Degree(unsigned i) const
+    { return adjacency_list[i].size(); }
+  unsigned ArcListMember(unsigned i, unsigned j) const
+    { return adjacency_list[i][j]; }
+protected:
+  unsigned nodes, colors;
+  vector<vector<bool>>     adjacency_matrix;
+  vector<vector<unsigned>> adjacency_list;
+};
+\end{lstlisting}
+
+\paragraph{Design notes.}
+\begin{itemize}[nosep]
+  \item The graph is stored in \emph{two} representations:
+    an adjacency matrix (fast $\Oh{1}$ edge queries) and
+    adjacency lists (fast neighbour iteration).
+    Both are built once by the constructor.
+  \item All accessors are \texttt{const}---the solver can read but
+    never modify the graph.
+  \item The \texttt{friend} declaration lets the \texttt{<\!<}
+    operator access private members for printing.
+  \item Data members are \texttt{protected} (not \texttt{private})
+    so that subclasses---e.g.\ a \texttt{WeightedGraph}---can
+    extend them.
+\end{itemize}
+
+\paragraph{The constructor} reads a MiniZinc-style data file:
+
+\begin{lstlisting}[language=C++,
+  caption={Constructor: reading the instance file.},
+  label={lst:gc-constructor}]
+Graph::Graph(string file_name) {
+  char ch; string buffer; unsigned i, j, val;
+  ifstream is(file_name);
+  if (!is) { cerr << "Could not open " << file_name << endl; exit(1); }
+
+  is >> buffer >> ch >> nodes  >> ch;  // "nodes = <n>;"
+  is >> buffer >> ch >> colors >> ch;  // "colors = <k>;"
+
+  adjacency_matrix.resize(nodes, vector<bool>(nodes, false));
+  adjacency_list.resize(nodes);
+
+  is >> buffer >> ch >> ch >> ch;      // "adjacency_matrix = [|"
+  for (i = 0; i < nodes; i++)
+    for (j = 0; j < nodes; j++) {
+      is >> val >> ch;
+      if (val == 1 && i < j) {        // upper triangle only
+        adjacency_matrix[i][j] = true;
+        adjacency_matrix[j][i] = true;
+        adjacency_list[i].push_back(j);
+        adjacency_list[j].push_back(i);
+      }
+    }
+}
+\end{lstlisting}
+
+\noindent
+The file format matches MiniZinc's data syntax (which we will
+use in the next lectures), so the same instance file serves both
+the C++ solver and the MiniZinc model.
+
+% ------------------------------------------------------------
+\subsection{The \texttt{Coloring} class (Output)}
+\label{ssec:coloring-class}
+% ------------------------------------------------------------
+
+\begin{lstlisting}[language=C++,
+  caption={\texttt{GC\_Data.hh} --- the \texttt{Coloring} class
+           (solution).},
+  label={lst:gc-data-hh-coloring}]
+class Coloring {
+  friend ostream& operator<<(ostream& os, const Coloring& col);
+public:
+  Coloring(const Graph& my_in)
+    : in(my_in), coloring(in.Nodes(), -1) {}
+  void Reset();
+  int  operator[](unsigned i) const { return coloring[i]; }
+  int& operator[](unsigned i)       { return coloring[i]; }
+protected:
+  const Graph& in;
+  vector<int>  coloring;
+};
+\end{lstlisting}
+
+\paragraph{Design notes.}
+\begin{itemize}[nosep]
+  \item The constructor takes a \texttt{const Graph\&} and
+    initialises every node's colour to $-1$ (uncoloured).
+  \item The \texttt{operator[]} overloads provide array-like
+    syntax: \texttt{col[v] = 3} assigns colour~3 to node~$v$;
+    \texttt{col[v]} reads it.
+    The \texttt{const} version returns by value (read-only);
+    the non-\texttt{const} version returns by reference
+    (read-write).
+  \item \texttt{Reset()} sets all colours back to $-1$, allowing
+    the solver to restart without reallocating memory.
+  \item The \texttt{in} reference lets the output class access
+    graph data (e.g.\ number of nodes) without duplicating it.
+\end{itemize}
+
+\begin{observation}
+This pattern---\texttt{Data} class with \texttt{const} accessors,
+\texttt{Solution} class with a reference to the data---recurs in
+every problem we implement.  For TSP: \texttt{TSP\_Data} stores
+the distance matrix, \texttt{TSP\_Solution} stores the tour.
+For bin packing: \texttt{BP\_Data} stores item sizes and bin
+capacity, \texttt{BP\_Solution} stores the assignment of items to
+bins.  The solver is always a separate function or class that
+reads from \texttt{Data} and writes to \texttt{Solution}.
+\end{observation}
+
+
+% ============================================================
+\section{Implementing Greedy: DSatur for Graph Colouring}
+\label{sec:gc-greedy-impl}
+% ============================================================
+
+With the architecture in place, let us implement the DSatur
+algorithm from \cref{ssec:dsatur}.
+The solver lives in its own compilation unit
+(\texttt{GC\_Greedy.hh/cc}), separate from the I/O classes.
+
+% ------------------------------------------------------------
+\subsection{The solver loop}
+\label{ssec:gc-greedy-loop}
+% ------------------------------------------------------------
+
+\begin{lstlisting}[language=C++,
+  caption={DSatur main loop (\texttt{GC\_Greedy.cc}).},
+  label={lst:gc-greedy-loop}]
+void GreedyGCSolver(const Graph& in, Coloring& out) {
+  unsigned i, k, c;
+  int n;
+  // colors[v] = set of colours still available for vertex v
+  vector<vector<unsigned>> colors(
+      in.Nodes(), vector<unsigned>(in.Colors()));
+  for (i = 0; i < in.Nodes(); i++)
+    iota(colors[i].begin(), colors[i].end(), 0);
+
+  out.Reset();
+  for (i = 0; i < in.Nodes(); i++) {
+    n = SelectNode(colors, in, out);  // DSatur selection
+    if (colors[n].size() == 0)
+      return;  // no feasible colour: search fails
+    k = Random(0, colors[n].size() - 1);
+    c = colors[n][k];                 // random among available
+    Update(n, c, colors, in);         // propagate
+    out[n] = c;
+  }
+}
+\end{lstlisting}
+
+\paragraph{Key data structure.}
+\texttt{colors[v]} is the list of colours still available for
+vertex~$v$.  Initially every vertex has all $k$ colours.
+After colouring a vertex, \texttt{Update} removes that colour
+from every neighbour's list.
+The \emph{saturation degree} of $v$ is implicitly
+$k - |\texttt{colors[v]}|$: fewer available colours $=$ higher
+saturation.
+
+% ------------------------------------------------------------
+\subsection{Node selection (DSatur rule)}
+\label{ssec:gc-select-node}
+% ------------------------------------------------------------
+
+\begin{lstlisting}[language=C++,
+  caption={\texttt{SelectNode}: pick the most saturated
+           uncoloured vertex.},
+  label={lst:gc-select}]
+unsigned SelectNode(const vector<vector<unsigned>>& v,
+                    const Graph& in, const Coloring& out) {
+  unsigned i;
+  int best = -1;
+  for (i = 0; i < v.size(); i++)
+    if (out[i] == -1 &&               // uncoloured
+        (best == -1
+         || v[i].size() < v[best].size()    // fewer available
+         || (v[i].size() == v[best].size()
+             && in.Degree(i) > in.Degree(best))))
+      best = i;                        // tie-break: degree
+  return best;
+}
+\end{lstlisting}
+
+\noindent
+Smaller \texttt{colors[v].size()} means higher saturation.
+Ties broken by highest degree---exactly the DSatur rule.
+
+% ------------------------------------------------------------
+\subsection{Propagation}
+\label{ssec:gc-update}
+% ------------------------------------------------------------
+
+\begin{lstlisting}[language=C++,
+  caption={\texttt{Update}: remove colour \texttt{c} from
+           all neighbours of~\texttt{n}.},
+  label={lst:gc-update}]
+void Update(unsigned n, unsigned c,
+            vector<vector<unsigned>>& v, const Graph& in) {
+  for (unsigned i = 0; i < in.Degree(n); i++) {
+    unsigned k = in.ArcListMember(n, i);
+    for (unsigned j = 0; j < v[k].size(); j++)
+      if (v[k][j] == c) {
+        v[k].erase(v[k].begin() + j);
+        break;
+      }
+  }
+}
+\end{lstlisting}
+
+% ------------------------------------------------------------
+\subsection{Driver and Makefile}
+\label{ssec:gc-driver}
+% ------------------------------------------------------------
+
+\begin{lstlisting}[language=C++,
+  caption={Minimal driver (\texttt{GC\_Driver.cc}).},
+  label={lst:gc-driver}]
+#include "GC_Data.hh"
+#include "GC_Greedy.hh"
+
+int main(int argc, char* argv[]) {
+  if (argc != 2) {
+    cerr << "Usage: " << argv[0] << " <input_file>" << endl;
+    return 1;
+  }
+  Graph in(argv[1]);
+  Coloring out(in);
+  GreedyGCSolver(in, out);
+  cout << out << endl;
+  return 0;
+}
+\end{lstlisting}
+
+\noindent
+The driver is trivially short: create Input, create Output, run
+Solver, print.  To switch algorithms, only the solver call
+changes.
+
+\begin{lstlisting}[language=make,
+  caption={Makefile for the graph colouring solver.},
+  label={lst:gc-makefile}]
+OPTIONS = -Wall -Wfatal-errors -O3
+
+GC_Test.exe: GC_Driver.o GC_Greedy.o GC_Data.o Random.o
+    g++ -o GC_Test.exe $^
+
+GC_Data.o: GC_Data.cc GC_Data.hh
+    g++ $(OPTIONS) -c GC_Data.cc
+
+GC_Greedy.o: GC_Greedy.cc GC_Greedy.hh GC_Data.hh
+    g++ $(OPTIONS) -c GC_Greedy.cc
+
+GC_Driver.o: GC_Driver.cc GC_Data.hh
+    g++ $(OPTIONS) -c GC_Driver.cc
+
+clean:
+    rm -f *.o GC_Test.exe
+\end{lstlisting}
+
+
+% ============================================================
+\section{Example 2: Bus Driver Scheduling (I/O classes)}
+\label{sec:bds-data}
+% ============================================================
+
+As a second example of the Input/Output pattern, we look at the
+\textbf{Bus Driver Scheduling} (BDS) problem: given a set of
+\emph{tasks} (bus trips) and a set of \emph{shifts} (driver
+work-blocks, each covering certain tasks), select a minimum-cost
+set of shifts that covers every task.%
+\aside{BDS is a set-covering problem:
+shifts = sets, tasks = elements.}
+
+\begin{lstlisting}[language=C++,
+  caption={\texttt{BDS\_Data.hh} --- Input class (excerpt).},
+  label={lst:bds-input}]
+class BDS_Input {
+  friend ostream& operator<<(ostream& os, const BDS_Input& bs);
+public:
+  BDS_Input(string file_name);
+  unsigned Tasks()  const { return tasks; }
+  unsigned Shifts() const { return shifts; }
+  bool Covers(unsigned s, unsigned t) const
+    { return covers[s][t]; }
+  unsigned ShiftCost(unsigned s) const
+    { return shift_cost[s]; }
+protected:
+  unsigned tasks, shifts;
+  vector<unsigned> shift_cost;
+  vector<vector<bool>> covers;
+  vector<vector<unsigned>> shift_members;
+  vector<vector<unsigned>> task_coverage;
+};
+\end{lstlisting}
+
+\begin{lstlisting}[language=C++,
+  caption={\texttt{BDS\_Data.hh} --- Output class (excerpt).},
+  label={lst:bds-output}]
+class BDS_Output {
+  friend ostream& operator<<(ostream& os, const BDS_Output& out);
+public:
+  BDS_Output(const BDS_Input& i);
+  bool operator[](unsigned s) const
+    { return selected_shifts[s]; }
+  unsigned Uncovered() const { return uncovered; }
+  unsigned TotalCost() const { return total_cost; }
+
+  void InsertShift(unsigned s);
+  void RemoveShift(unsigned s);
+  void RemoveAll();
+private:
+  const BDS_Input& in;
+  vector<bool> selected_shifts;
+  vector<unsigned> coverage;
+  unsigned uncovered, total_cost;
+};
+\end{lstlisting}
+
+\paragraph{Design notes.}
+\begin{itemize}[nosep]
+  \item The Output class maintains \emph{incremental}
+    bookkeeping: \texttt{InsertShift} and \texttt{RemoveShift}
+    update \texttt{coverage}, \texttt{uncovered}, and
+    \texttt{total\_cost} without a full recount.
+  \item This incremental pattern will be essential for
+    \emph{local search} (later chapters), where we repeatedly
+    insert/remove shifts and need fast cost evaluation.
+  \item The same Input/Output split applies: greedy,
+    backtracking, or local-search solvers all use the same
+    \texttt{BDS\_Input} and \texttt{BDS\_Output}.
+\end{itemize}

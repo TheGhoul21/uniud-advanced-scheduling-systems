@@ -1,0 +1,359 @@
+---
+title: "DSatur: Graph Colouring by Saturation Degree"
+subtitle: "Interactive visualizations for Chapter 3 of the Advanced Scheduling Systems notes"
+engine: knitr
+format:
+  live-html:
+    theme: cosmo
+    toc: true
+    toc-depth: 3
+    pyodide:
+      packages:
+        - matplotlib
+        - numpy
+      cell-options:
+        autorun: true
+        edit: false
+        echo: false
+---
+
+# DSatur: Graph Colouring by Saturation Degree
+
+**DSatur** (Degree of Saturation) is a greedy graph-colouring heuristic. At each step it picks the uncoloured vertex with the highest **saturation degree** (the number of distinct colours among its already-coloured neighbours), breaking ties by highest uncoloured degree, then alphabetically. It assigns the smallest available colour.
+
+We compare DSatur against a simpler **Max Degree** ordering (static ordering by vertex degree).
+
+```{pyodide}
+#| autorun: true
+#| edit: false
+#| output: false
+
+import matplotlib
+import matplotlib.pyplot as plt
+import matplotlib.patches as mpatches
+import numpy as np
+from collections import defaultdict
+import math
+
+matplotlib.rcParams['font.family'] = 'monospace'
+matplotlib.rcParams['font.size'] = 11
+matplotlib.rcParams['figure.dpi'] = 120
+
+# Graph definition
+VERTICES = ['A', 'B', 'C', 'D', 'E']
+EDGES = [('A', 'B'), ('A', 'D'), ('A', 'E'),
+         ('B', 'C'), ('B', 'D'),
+         ('C', 'D'),
+         ('D', 'E')]
+
+ADJ = defaultdict(set)
+for u, v in EDGES:
+    ADJ[u].add(v)
+    ADJ[v].add(u)
+
+# Circular layout
+N = len(VERTICES)
+POS = {}
+for i, v in enumerate(VERTICES):
+    angle = 2 * math.pi * i / N - math.pi / 2
+    POS[v] = (math.cos(angle), math.sin(angle))
+
+PALETTE = ['#4C72B0', '#DD8452', '#55A868', '#C44E52', '#8172B3', '#CCB974']
+UNCOLOURED = '#D3D3D3'
+CHROMATIC_NUMBER = 4
+
+
+# Algorithm implementations
+
+def dsatur_order(vertices, adj):
+    colour = {}
+    steps = []
+    remaining = set(vertices)
+    while remaining:
+        sat = {}
+        udeg = {}
+        for v in remaining:
+            neighbour_colours = {colour[u] for u in adj[v] if u in colour}
+            sat[v] = len(neighbour_colours)
+            udeg[v] = sum(1 for u in adj[v] if u in remaining and u != v)
+        chosen = max(remaining, key=lambda v: (sat[v], udeg[v], v))
+        used = {colour[u] for u in adj[chosen] if u in colour}
+        c = 0
+        while c in used:
+            c += 1
+        colour[chosen] = c
+        remaining.remove(chosen)
+        full_sat = {}
+        full_udeg = {}
+        for v in vertices:
+            neighbour_colours = {colour[u] for u in adj[v] if u in colour}
+            full_sat[v] = len(neighbour_colours)
+            full_udeg[v] = sum(1 for u in adj[v] if u not in colour)
+        steps.append({
+            'chosen': chosen,
+            'colour': dict(colour),
+            'sat': full_sat,
+            'udeg': full_udeg,
+        })
+    return steps
+
+
+def max_degree_order(vertices, adj):
+    order = sorted(vertices, key=lambda v: (-len(adj[v]), v))
+    colour = {}
+    steps = []
+    for chosen in order:
+        used = {colour[u] for u in adj[chosen] if u in colour}
+        c = 0
+        while c in used:
+            c += 1
+        colour[chosen] = c
+        full_sat = {}
+        full_udeg = {}
+        for v in vertices:
+            neighbour_colours = {colour[u] for u in adj[v] if u in colour}
+            full_sat[v] = len(neighbour_colours)
+            full_udeg[v] = sum(1 for u in adj[v] if u not in colour)
+        steps.append({
+            'chosen': chosen,
+            'colour': dict(colour),
+            'sat': full_sat,
+            'udeg': full_udeg,
+        })
+    return steps
+
+
+# Drawing helpers
+
+def draw_state(ax, step_data, vertices, edges, pos, palette, highlight):
+    ax.set_xlim(-1.55, 1.55)
+    ax.set_ylim(-1.55, 1.55)
+    ax.set_aspect('equal')
+    ax.axis('off')
+    colour_map = step_data['colour']
+    for u, v in edges:
+        xu, yu = pos[u]
+        xv, yv = pos[v]
+        ax.plot([xu, xv], [yu, yv], '-', color='#888888', linewidth=1.5, zorder=1)
+    for v in vertices:
+        x, y = pos[v]
+        c_idx = colour_map.get(v)
+        face = palette[c_idx] if c_idx is not None else UNCOLOURED
+        lw = 3.5 if v == highlight else 1.2
+        ec = '#222222' if v == highlight else '#555555'
+        circle = plt.Circle((x, y), 0.15, facecolor=face, edgecolor=ec,
+                            linewidth=lw, zorder=3)
+        ax.add_patch(circle)
+        ax.text(x, y, v, ha='center', va='center', fontsize=13,
+                fontweight='bold', color='white' if c_idx is not None else '#333',
+                zorder=4, family='monospace')
+
+
+def draw_info_table(ax, step_data, vertices, palette):
+    ax.axis('off')
+    colour_map = step_data['colour']
+    sat = step_data['sat']
+    udeg = step_data['udeg']
+    chosen = step_data['chosen']
+    headers = ['Vtx', 'Sat', 'UDeg', 'Colour']
+    col_x = [0.05, 0.25, 0.50, 0.75]
+    top = 0.92
+    row_h = 0.13
+    for j, h in enumerate(headers):
+        ax.text(col_x[j], top, h, fontsize=11, fontweight='bold',
+                family='monospace', va='center')
+    ax.plot([0.0, 0.95], [top - 0.05, top - 0.05], '-', color='#aaa', lw=0.8)
+    for i, v in enumerate(vertices):
+        y = top - (i + 1) * row_h
+        weight = 'bold' if v == chosen else 'normal'
+        prefix = '>' if v == chosen else ' '
+        ax.text(col_x[0], y, f'{prefix}{v}', fontsize=11, fontweight=weight,
+                family='monospace', va='center')
+        ax.text(col_x[1], y, str(sat.get(v, '-')), fontsize=11,
+                fontweight=weight, family='monospace', va='center')
+        ax.text(col_x[2], y, str(udeg.get(v, '-')), fontsize=11,
+                fontweight=weight, family='monospace', va='center')
+        c_idx = colour_map.get(v)
+        if c_idx is not None:
+            label = f'C{c_idx + 1}'
+            colour = palette[c_idx]
+        else:
+            label = '--'
+            colour = '#999999'
+        ax.text(col_x[3], y, label, fontsize=11, fontweight=weight,
+                family='monospace', va='center', color=colour)
+
+
+# Pre-compute steps
+dsatur_steps = dsatur_order(VERTICES, ADJ)
+maxdeg_steps = max_degree_order(VERTICES, ADJ)
+```
+
+## The Graph
+
+Five vertices (A--E) with 7 edges. The chromatic number is **4** (the subgraph A-B-C-D contains a 4-clique).
+
+```{pyodide}
+#| autorun: true
+#| edit: false
+
+fig, ax = plt.subplots(figsize=(5, 5))
+ax.set_xlim(-1.55, 1.55)
+ax.set_ylim(-1.55, 1.55)
+ax.set_aspect('equal')
+ax.axis('off')
+
+for u, v in EDGES:
+    xu, yu = POS[u]
+    xv, yv = POS[v]
+    ax.plot([xu, xv], [yu, yv], '-', color='#888888', linewidth=1.5, zorder=1)
+
+for v in VERTICES:
+    x, y = POS[v]
+    circle = plt.Circle((x, y), 0.15, facecolor=UNCOLOURED, edgecolor='#555555',
+                        linewidth=1.2, zorder=3)
+    ax.add_patch(circle)
+    ax.text(x, y, v, ha='center', va='center', fontsize=13,
+            fontweight='bold', color='#333', zorder=4, family='monospace')
+    ax.text(x, y - 0.25, f'deg={len(ADJ[v])}', ha='center', va='top',
+            fontsize=8, color='#666', family='monospace')
+
+ax.set_title('Input graph (uncoloured)', fontsize=12, fontweight='bold', pad=10)
+plt.tight_layout()
+plt.show()
+```
+
+## DSatur: Step-by-Step Colouring
+
+At each step, DSatur picks the uncoloured vertex with the highest saturation (number of distinct neighbour colours), breaking ties by uncoloured degree then alphabetically.
+
+```{pyodide}
+#| autorun: true
+#| edit: false
+
+n_steps = len(dsatur_steps)
+fig, axes = plt.subplots(1, n_steps, figsize=(n_steps * 3.5, 4))
+
+for idx, step_data in enumerate(dsatur_steps):
+    ax = axes[idx]
+    draw_state(ax, step_data, VERTICES, EDGES, POS, PALETTE,
+               highlight=step_data['chosen'])
+    chosen = step_data['chosen']
+    c_idx = step_data['colour'][chosen]
+    ax.set_title(f'Step {idx+1}: colour {chosen} -> C{c_idx+1}',
+                 fontsize=10, fontweight='bold', pad=8, family='monospace')
+
+fig.suptitle('DSatur colouring sequence', fontsize=13, fontweight='bold', y=1.03)
+plt.tight_layout()
+plt.show()
+```
+
+### DSatur Detail Table
+
+The table below shows the saturation degree, uncoloured degree, and assigned colour for each vertex at every step.
+
+```{pyodide}
+#| autorun: true
+#| edit: false
+
+fig, axes = plt.subplots(1, n_steps, figsize=(n_steps * 3.2, 3.5))
+
+for idx, step_data in enumerate(dsatur_steps):
+    ax = axes[idx]
+    draw_info_table(ax, step_data, VERTICES, PALETTE)
+    ax.set_title(f'Step {idx+1}', fontsize=10, fontweight='bold', pad=6,
+                 family='monospace')
+
+    # Summary on last step
+    if idx == n_steps - 1:
+        final_colours = step_data['colour']
+        n_colours = len(set(final_colours.values()))
+        optimal = n_colours == CHROMATIC_NUMBER
+        msg = f'Colours used: {n_colours}  |  {"Optimal!" if optimal else "Not optimal."}'
+        ax.text(0.05, 0.02, msg, fontsize=9, family='monospace', va='bottom',
+                color='#2a7f2a' if optimal else '#b03030', fontweight='bold')
+
+fig.suptitle('DSatur step details', fontsize=12, fontweight='bold', y=1.02)
+plt.tight_layout()
+plt.show()
+```
+
+## Max Degree: Step-by-Step Colouring
+
+The Max Degree heuristic uses a static ordering: vertices are sorted by decreasing degree before colouring begins.
+
+```{pyodide}
+#| autorun: true
+#| edit: false
+
+n_steps_md = len(maxdeg_steps)
+fig, axes = plt.subplots(1, n_steps_md, figsize=(n_steps_md * 3.5, 4))
+
+for idx, step_data in enumerate(maxdeg_steps):
+    ax = axes[idx]
+    draw_state(ax, step_data, VERTICES, EDGES, POS, PALETTE,
+               highlight=step_data['chosen'])
+    chosen = step_data['chosen']
+    c_idx = step_data['colour'][chosen]
+    ax.set_title(f'Step {idx+1}: colour {chosen} -> C{c_idx+1}',
+                 fontsize=10, fontweight='bold', pad=8, family='monospace')
+
+fig.suptitle('Max Degree colouring sequence', fontsize=13, fontweight='bold', y=1.03)
+plt.tight_layout()
+plt.show()
+```
+
+### Max Degree Detail Table
+
+```{pyodide}
+#| autorun: true
+#| edit: false
+
+fig, axes = plt.subplots(1, n_steps_md, figsize=(n_steps_md * 3.2, 3.5))
+
+for idx, step_data in enumerate(maxdeg_steps):
+    ax = axes[idx]
+    draw_info_table(ax, step_data, VERTICES, PALETTE)
+    ax.set_title(f'Step {idx+1}', fontsize=10, fontweight='bold', pad=6,
+                 family='monospace')
+
+    if idx == n_steps_md - 1:
+        final_colours = step_data['colour']
+        n_colours = len(set(final_colours.values()))
+        optimal = n_colours == CHROMATIC_NUMBER
+        msg = f'Colours used: {n_colours}  |  {"Optimal!" if optimal else "Not optimal."}'
+        ax.text(0.05, 0.02, msg, fontsize=9, family='monospace', va='bottom',
+                color='#2a7f2a' if optimal else '#b03030', fontweight='bold')
+
+fig.suptitle('Max Degree step details', fontsize=12, fontweight='bold', y=1.02)
+plt.tight_layout()
+plt.show()
+```
+
+## Comparison
+
+```{pyodide}
+#| autorun: true
+#| edit: false
+
+dsatur_n = len(set(dsatur_steps[-1]['colour'].values()))
+maxdeg_n = len(set(maxdeg_steps[-1]['colour'].values()))
+
+fig, ax = plt.subplots(figsize=(6, 4))
+names = ['DSatur', 'Max Degree', 'Chromatic Number']
+vals = [dsatur_n, maxdeg_n, CHROMATIC_NUMBER]
+colors = ['#4C72B0', '#DD8452', '#333333']
+bars = ax.bar(names, vals, color=colors, edgecolor='white', linewidth=1.2)
+
+for b, v in zip(bars, vals):
+    ax.text(b.get_x() + b.get_width()/2, v + 0.05, str(v),
+            ha='center', fontsize=12, fontweight='bold')
+
+ax.set_ylabel('Number of Colours')
+ax.set_title('Colours Used by Each Strategy', fontsize=13, fontweight='bold')
+ax.set_ylim(0, max(vals) + 1)
+plt.tight_layout()
+plt.show()
+```
+
+**Key takeaway:** On this graph, both DSatur and Max Degree achieve the optimal colouring with 4 colours. DSatur's adaptive saturation-based ordering often outperforms static orderings on larger, more complex graphs.

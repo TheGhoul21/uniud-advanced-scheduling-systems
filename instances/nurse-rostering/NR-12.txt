@@ -1,0 +1,51 @@
+SKILLS = 2
+HeadNurse
+Nurse
+
+SHIFT_TYPES = 4
+Early 0
+Day 0
+Late 2 Early Day
+Night 3 Early Day Late
+
+CONTRACTS = 2
+FullTime (4,6) 1
+PartTime (2,3) 1
+
+NURSES = 12
+Alice FullTime 2 HeadNurse Nurse 
+Bob FullTime 2 HeadNurse Nurse
+John FullTime 1 Nurse
+Kate PartTime 2 HeadNurse Nurse
+Mary FullTime 1 Nurse
+Paul PartTime 1 Nurse
+Arthur PartTime 2 HeadNurse Nurse
+Pier FullTime 2 HeadNurse Nurse
+Lucy PartTime 1 Nurse
+Maggie FullTime 2 HeadNurse Nurse
+Patrick PartTime 2 HeadNurse Nurse
+Jane PartTime 1 Nurse
+
+REQUIREMENTS
+Early HeadNurse (0,0) (0,1) (0,0) (0,0) (1,1) (0,0) (0,0)
+Early Nurse (1,2) (1,1) (1,1) (1,1) (2,3) (1,1) (1,1)
+Day HeadNurse (1,1) (0,0) (1,1) (1,1) (1,1) (1,1) (1,1)
+Day Nurse (1,2) (1,1) (1,1) (1,1) (2,3) (1,1) (1,1)
+Late HeadNurse (0,0) (0,0) (0,0) (0,1) (0,0) (1,1) (0,1)
+Late Nurse (2,2) (1,1) (2,2) (1,1) (1,1) (1,1) (1,1)
+Night HeadNurse (0,0) (0,0) (1,1) (1,1) (1,1) (1,1) (0,0)
+Night Nurse (1,1) (1,2) (2,2) (1,1) (2,3) (1,1) (1,1)
+
+SHIFT_OFF_REQUESTS = 12
+Maggie Any Mon 
+Paul Early Mon 
+Arthur Any Tue 
+Bob Night Tue 
+Bob Late Wed 
+John Any Wed 
+Kate Any Wed 
+Arthur Any Thu 
+Pier Late Thu 
+Maggie Any Fri 
+Lucy Day Sat 
+Lucy Night Sat 

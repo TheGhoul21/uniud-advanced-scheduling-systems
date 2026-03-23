@@ -1,0 +1,36 @@
+# LaTeX build artefacts
+*.aux
+*.log
+*.out
+*.toc
+*.lof
+*.lot
+*.fls
+*.fdb_latexmk
+*.synctex.gz
+*.bbl
+*.blg
+*.bcf
+*.run.xml
+*.nav
+*.snm
+*.vrb
+_minted-*/
+auto/
+
+# Build output (keep the PDF in git if you want, remove this line)
+# main.pdf
+
+
+# Manim temp files:
+__pycache__/
+*.pyc
+media/
+
+# Quarto
+_site/
+.quarto/
+/.quarto/
+
+# OS
+.DS_Store
