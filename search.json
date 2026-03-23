@@ -1,0 +1,177 @@
+[
+  {
+    "objectID": "notebooks/01-cpm.html",
+    "href": "notebooks/01-cpm.html",
+    "title": "Critical Path Method (CPM)",
+    "section": "",
+    "text": "The Critical Path Method finds the shortest possible duration for a project whose jobs have precedence constraints. Each job \\(i\\) has a processing time \\(p_i\\) and cannot start until all its predecessors finish.\nThe algorithm works in two passes over the precedence DAG:\n\nForward pass (topological order): compute the earliest start \\(S_i = \\max_{k \\to i} C_k\\) and earliest completion \\(C_i = S_i + p_i\\) for each job.\nBackward pass (reverse topological order): compute the latest completion \\(\\bar{C}_i = \\min_{i \\to j} \\bar{S}_j\\) and latest start \\(\\bar{S}_i = \\bar{C}_i - p_i\\).\n\nA job is critical when \\(S_i = \\bar{S}_i\\) (equivalently \\(C_i = \\bar{C}_i\\)): it has zero slack and any delay on it delays the entire project. The critical path is the longest path through the DAG.\n\n\n\n\n\n\n\n\n\n\nThe graph below shows the 7 jobs and their precedence constraints. Each node shows the job number and its processing time.\n\n\n\n\n\n\n\n\n\n\n\nProcess each job in topological order. For each job \\(i\\):\n\nEarliest start: \\(S_i = \\max_{k \\in \\text{pred}(i)} C_k\\) (or 0 if no predecessors).\nEarliest completion: \\(C_i = S_i + p_i\\).\n\nThe step-by-step forward pass is shown below. Each panel highlights the job being processed (orange) and the jobs already processed (blue).\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\nProcess each job in reverse topological order. For each job \\(i\\):\n\nLatest completion: \\(\\bar{C}_i = \\min_{j \\in \\text{succ}(i)} \\bar{S}_j\\) (or \\(C_{\\max}\\) if no successors).\nLatest start: \\(\\bar{S}_i = \\bar{C}_i - p_i\\).\n\nThe backward pass tells us how much each job can be delayed without increasing the makespan.\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\nA job \\(i\\) is critical when its slack is zero: \\(S_i = \\bar{S}_i\\) (equivalently, \\(C_i = \\bar{C}_i\\)). The critical path is the longest path through the DAG; its total duration equals \\(C_{\\max}\\). Any delay on a critical job delays the entire project."
+  },
+  {
+    "objectID": "notebooks/01-cpm.html#the-precedence-dag",
+    "href": "notebooks/01-cpm.html#the-precedence-dag",
+    "title": "Critical Path Method (CPM)",
+    "section": "",
+    "text": "The graph below shows the 7 jobs and their precedence constraints. Each node shows the job number and its processing time."
+  },
+  {
+    "objectID": "notebooks/01-cpm.html#forward-pass",
+    "href": "notebooks/01-cpm.html#forward-pass",
+    "title": "Critical Path Method (CPM)",
+    "section": "",
+    "text": "Process each job in topological order. For each job \\(i\\):\n\nEarliest start: \\(S_i = \\max_{k \\in \\text{pred}(i)} C_k\\) (or 0 if no predecessors).\nEarliest completion: \\(C_i = S_i + p_i\\).\n\nThe step-by-step forward pass is shown below. Each panel highlights the job being processed (orange) and the jobs already processed (blue)."
+  },
+  {
+    "objectID": "notebooks/01-cpm.html#backward-pass",
+    "href": "notebooks/01-cpm.html#backward-pass",
+    "title": "Critical Path Method (CPM)",
+    "section": "",
+    "text": "Process each job in reverse topological order. For each job \\(i\\):\n\nLatest completion: \\(\\bar{C}_i = \\min_{j \\in \\text{succ}(i)} \\bar{S}_j\\) (or \\(C_{\\max}\\) if no successors).\nLatest start: \\(\\bar{S}_i = \\bar{C}_i - p_i\\).\n\nThe backward pass tells us how much each job can be delayed without increasing the makespan."
+  },
+  {
+    "objectID": "notebooks/01-cpm.html#critical-path",
+    "href": "notebooks/01-cpm.html#critical-path",
+    "title": "Critical Path Method (CPM)",
+    "section": "",
+    "text": "A job \\(i\\) is critical when its slack is zero: \\(S_i = \\bar{S}_i\\) (equivalently, \\(C_i = \\bar{C}_i\\)). The critical path is the longest path through the DAG; its total duration equals \\(C_{\\max}\\). Any delay on a critical job delays the entire project."
+  },
+  {
+    "objectID": "notebooks/03-dsatur.html",
+    "href": "notebooks/03-dsatur.html",
+    "title": "DSatur: Graph Colouring by Saturation Degree",
+    "section": "",
+    "text": "DSatur (Degree of Saturation) is a greedy graph-colouring heuristic. At each step it picks the uncoloured vertex with the highest saturation degree (the number of distinct colours among its already-coloured neighbours), breaking ties by highest uncoloured degree, then alphabetically. It assigns the smallest available colour.\nWe compare DSatur against a simpler Max Degree ordering (static ordering by vertex degree).\n\n\n\n\n\n\n\n\n\n\nFive vertices (A–E) with 7 edges. The chromatic number is 4 (the subgraph A-B-C-D contains a 4-clique).\n\n\n\n\n\n\n\n\n\n\n\nAt each step, DSatur picks the uncoloured vertex with the highest saturation (number of distinct neighbour colours), breaking ties by uncoloured degree then alphabetically.\n\n\n\n\n\n\n\n\n\n\nThe table below shows the saturation degree, uncoloured degree, and assigned colour for each vertex at every step.\n\n\n\n\n\n\n\n\n\n\n\n\nThe Max Degree heuristic uses a static ordering: vertices are sorted by decreasing degree before colouring begins.\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\nKey takeaway: On this graph, both DSatur and Max Degree achieve the optimal colouring with 4 colours. DSatur’s adaptive saturation-based ordering often outperforms static orderings on larger, more complex graphs."
+  },
+  {
+    "objectID": "notebooks/03-dsatur.html#the-graph",
+    "href": "notebooks/03-dsatur.html#the-graph",
+    "title": "DSatur: Graph Colouring by Saturation Degree",
+    "section": "",
+    "text": "Five vertices (A–E) with 7 edges. The chromatic number is 4 (the subgraph A-B-C-D contains a 4-clique)."
+  },
+  {
+    "objectID": "notebooks/03-dsatur.html#dsatur-step-by-step-colouring",
+    "href": "notebooks/03-dsatur.html#dsatur-step-by-step-colouring",
+    "title": "DSatur: Graph Colouring by Saturation Degree",
+    "section": "",
+    "text": "At each step, DSatur picks the uncoloured vertex with the highest saturation (number of distinct neighbour colours), breaking ties by uncoloured degree then alphabetically.\n\n\n\n\n\n\n\n\n\n\nThe table below shows the saturation degree, uncoloured degree, and assigned colour for each vertex at every step."
+  },
+  {
+    "objectID": "notebooks/03-dsatur.html#max-degree-step-by-step-colouring",
+    "href": "notebooks/03-dsatur.html#max-degree-step-by-step-colouring",
+    "title": "DSatur: Graph Colouring by Saturation Degree",
+    "section": "",
+    "text": "The Max Degree heuristic uses a static ordering: vertices are sorted by decreasing degree before colouring begins."
+  },
+  {
+    "objectID": "notebooks/03-dsatur.html#comparison",
+    "href": "notebooks/03-dsatur.html#comparison",
+    "title": "DSatur: Graph Colouring by Saturation Degree",
+    "section": "",
+    "text": "Key takeaway: On this graph, both DSatur and Max Degree achieve the optimal colouring with 4 colours. DSatur’s adaptive saturation-based ordering often outperforms static orderings on larger, more complex graphs."
+  },
+  {
+    "objectID": "index.html",
+    "href": "index.html",
+    "title": "Advanced Scheduling Systems — Interactive Companions",
+    "section": "",
+    "text": "Interactive visualizations for the Advanced Scheduling Systems course at the University of Udine.\nEach notebook lets you step through classic scheduling algorithms with sliders and custom inputs — all running directly in your browser via Pyodide, no installation required."
+  },
+  {
+    "objectID": "index.html#notebooks",
+    "href": "index.html#notebooks",
+    "title": "Advanced Scheduling Systems — Interactive Companions",
+    "section": "Notebooks",
+    "text": "Notebooks\n\nChapter 1 — Introduction to Scheduling\n\nCritical Path Method (CPM) — Forward pass, backward pass, and critical path on a precedence DAG\nKnapsack: Greedy Strategies Compared — Max value, min weight, best ratio, and fractional relaxation side by side\nDSatur: Graph Colouring — Step through saturation-degree colouring vs max-degree ordering"
+  },
+  {
+    "objectID": "STYLE-GUIDE.html",
+    "href": "STYLE-GUIDE.html",
+    "title": "Style Guide — Advanced Algorithms Notes",
+    "section": "",
+    "text": "Guidelines for writing, structuring, and illustrating these lecture notes.\n\n\nTone: Knowledgeable guide, not textbook. Write as if you’re walking someone through the material at a whiteboard. Use “we”, “let’s”, “notice that”. Never compress three ideas into one sentence.\nAfter every formal definition: Add an intuitive paragraph that unpacks it piece by piece in plain language. Reference a concrete example by number. The definition is for precision; the paragraph is for understanding.\nStep-by-step over summary: When describing an algorithm or process, list what happens at each step. “Two things can happen: …” is better than a single abstract sentence covering all cases.\nConcrete before general: Always show a specific example first, then state the general rule. “For instance, nan is a prefix of the suffix nana” before “every substring is a prefix of some suffix.”\n\n\n\nFormal definitions stay formal — they’re reference material. But they never stand alone. Every definition gets: 1. An intuitive walkthrough immediately after 2. A cross-reference to a concrete example/figure 3. Color-highlighted elements in the referenced figure\nFormaldetails boxes for proofs and complexity analyses — wider than normal text, centered on the page, light teal background. Inner theorems/lemmas keep their normal styling (colored left bar).\nIntermezzo boxes for historical notes, fun facts, and tangential connections — warm orange background. Keep them self-contained and interesting.\nAsides (margin notes) for brief clarifications, one-liners, and connections to other concepts. Keep them short — if they overflow the margin, they’re too long.\n\n\n\nEvery major concept gets a figure. If you’re describing a tree, draw the tree. If you’re describing a process, show before/after.\nCross-reference with colors: Highlight specific elements in TikZ figures (e.g., violet edge for a transition, red dashed arrow for a suffix link) and reference them in the text: “the violet-highlighted edge shows g’(ca, c) = cac.”\nStyle consistency: - Blue: internal/branching nodes - Orange: leaves - Gray (dashed border): implicit/pass-through nodes - Violet: highlighted transitions - Red (dashed): failure/suffix links - Green (dotted): output links - Solid lines: tree edges\nAnnotations on figures: Use boxed labels with leader arrows for callouts. Never let annotations overlap with the figure content. Keep them outside the main structure.\nScan direction arrows, pointers, comparison markers must be clearly visible — bold, colored, not gray.\n\n\n\nRecurring examples: Use the same strings across related sections (cacao for suffix structures, potato/tatoo/theater/other for keyword trees, he/she/his/hers for Aho-Corasick). Familiarity reduces cognitive load.\nVerify properties on examples: After stating a property (size, height, fan-out), verify it on the running example with actual numbers: “the tree has 23 edges, confirming the size bound.”\nShow the failure case: When motivating a new concept, show concretely what goes wrong without it. “We already knew that T[3,4] = he; going back to the root and re-reading them is redundant work.”\n\n\n\nBridge sections explicitly: When a new structure generalizes an old one, say so directly. “A suffix trie is exactly the keyword tree of the set of all suffixes” with the formula. “Failure links are the direct multi-pattern generalisation of KMP’s sp’ values.”\n“Why learn X if we have Y?”: Address this whenever two algorithms solve similar problems. Boyer-Moore vs KMP, keyword tree vs running KMP per pattern.\nHistorical context as intermezzos: Who invented it, when, why, what tool it was built for. “Every time you run grep -F, you’re using Aho-Corasick.”\n\n\n\nOneside (digital notes, not printed book). Wide right margin for asides. Formaldetails and intermezzos extend into the margin space, centered on the physical page.\nNo dashed borders on boxes — just colored backgrounds. Formaldetails = teal tint, Intermezzo = orange tint. Bold sans-serif headers with a small filled square icon.\nTheorem-like environments: Colored left bar (2.5pt), light tinted background. - Blue: theorems, lemmas, corollaries, propositions - Teal: definitions - Orange: examples - Violet: exercises, problems - Gray: remarks, notes, observations\n\n\n\nOne notebook per algorithm/topic, not one giant monolith. Both .qmd (Quarto/Pyodide for web) and .ipynb (Jupyter with ipywidgets).\nCode hidden by default (echo: false for qmd, source_hidden for ipynb). The reader sees only the interactive controls and output.\nGranular stepping: Each step should show one atomic operation. For naive matching: one character comparison per step, with explicit backtrack steps. The student should see the repeated work, not just the result.\nVisual feedback: Active path lit up, inactive parts grayed out. Color-coded status messages. Running counters for total comparisons and matches found.\nMatch the notes’ examples: Default inputs in notebooks should use the same strings as the LaTeX notes.\n\n\n\n\nDon’t compress a walkthrough into a single dense sentence\nDon’t let a formal definition stand without intuitive follow-up\nDon’t use invisible gray for important visual elements\nDon’t nest boxed environments with conflicting border styles\nDon’t assume the reader connects abstract definitions to figures on their own — make the connection explicit with colors and cross-references"
+  },
+  {
+    "objectID": "STYLE-GUIDE.html#writing-style",
+    "href": "STYLE-GUIDE.html#writing-style",
+    "title": "Style Guide — Advanced Algorithms Notes",
+    "section": "",
+    "text": "Tone: Knowledgeable guide, not textbook. Write as if you’re walking someone through the material at a whiteboard. Use “we”, “let’s”, “notice that”. Never compress three ideas into one sentence.\nAfter every formal definition: Add an intuitive paragraph that unpacks it piece by piece in plain language. Reference a concrete example by number. The definition is for precision; the paragraph is for understanding.\nStep-by-step over summary: When describing an algorithm or process, list what happens at each step. “Two things can happen: …” is better than a single abstract sentence covering all cases.\nConcrete before general: Always show a specific example first, then state the general rule. “For instance, nan is a prefix of the suffix nana” before “every substring is a prefix of some suffix.”"
+  },
+  {
+    "objectID": "STYLE-GUIDE.html#structure",
+    "href": "STYLE-GUIDE.html#structure",
+    "title": "Style Guide — Advanced Algorithms Notes",
+    "section": "",
+    "text": "Formal definitions stay formal — they’re reference material. But they never stand alone. Every definition gets: 1. An intuitive walkthrough immediately after 2. A cross-reference to a concrete example/figure 3. Color-highlighted elements in the referenced figure\nFormaldetails boxes for proofs and complexity analyses — wider than normal text, centered on the page, light teal background. Inner theorems/lemmas keep their normal styling (colored left bar).\nIntermezzo boxes for historical notes, fun facts, and tangential connections — warm orange background. Keep them self-contained and interesting.\nAsides (margin notes) for brief clarifications, one-liners, and connections to other concepts. Keep them short — if they overflow the margin, they’re too long."
+  },
+  {
+    "objectID": "STYLE-GUIDE.html#figures",
+    "href": "STYLE-GUIDE.html#figures",
+    "title": "Style Guide — Advanced Algorithms Notes",
+    "section": "",
+    "text": "Every major concept gets a figure. If you’re describing a tree, draw the tree. If you’re describing a process, show before/after.\nCross-reference with colors: Highlight specific elements in TikZ figures (e.g., violet edge for a transition, red dashed arrow for a suffix link) and reference them in the text: “the violet-highlighted edge shows g’(ca, c) = cac.”\nStyle consistency: - Blue: internal/branching nodes - Orange: leaves - Gray (dashed border): implicit/pass-through nodes - Violet: highlighted transitions - Red (dashed): failure/suffix links - Green (dotted): output links - Solid lines: tree edges\nAnnotations on figures: Use boxed labels with leader arrows for callouts. Never let annotations overlap with the figure content. Keep them outside the main structure.\nScan direction arrows, pointers, comparison markers must be clearly visible — bold, colored, not gray."
+  },
+  {
+    "objectID": "STYLE-GUIDE.html#examples",
+    "href": "STYLE-GUIDE.html#examples",
+    "title": "Style Guide — Advanced Algorithms Notes",
+    "section": "",
+    "text": "Recurring examples: Use the same strings across related sections (cacao for suffix structures, potato/tatoo/theater/other for keyword trees, he/she/his/hers for Aho-Corasick). Familiarity reduces cognitive load.\nVerify properties on examples: After stating a property (size, height, fan-out), verify it on the running example with actual numbers: “the tree has 23 edges, confirming the size bound.”\nShow the failure case: When motivating a new concept, show concretely what goes wrong without it. “We already knew that T[3,4] = he; going back to the root and re-reading them is redundant work.”"
+  },
+  {
+    "objectID": "STYLE-GUIDE.html#connecting-concepts",
+    "href": "STYLE-GUIDE.html#connecting-concepts",
+    "title": "Style Guide — Advanced Algorithms Notes",
+    "section": "",
+    "text": "Bridge sections explicitly: When a new structure generalizes an old one, say so directly. “A suffix trie is exactly the keyword tree of the set of all suffixes” with the formula. “Failure links are the direct multi-pattern generalisation of KMP’s sp’ values.”\n“Why learn X if we have Y?”: Address this whenever two algorithms solve similar problems. Boyer-Moore vs KMP, keyword tree vs running KMP per pattern.\nHistorical context as intermezzos: Who invented it, when, why, what tool it was built for. “Every time you run grep -F, you’re using Aho-Corasick.”"
+  },
+  {
+    "objectID": "STYLE-GUIDE.html#layout",
+    "href": "STYLE-GUIDE.html#layout",
+    "title": "Style Guide — Advanced Algorithms Notes",
+    "section": "",
+    "text": "Oneside (digital notes, not printed book). Wide right margin for asides. Formaldetails and intermezzos extend into the margin space, centered on the physical page.\nNo dashed borders on boxes — just colored backgrounds. Formaldetails = teal tint, Intermezzo = orange tint. Bold sans-serif headers with a small filled square icon.\nTheorem-like environments: Colored left bar (2.5pt), light tinted background. - Blue: theorems, lemmas, corollaries, propositions - Teal: definitions - Orange: examples - Violet: exercises, problems - Gray: remarks, notes, observations"
+  },
+  {
+    "objectID": "STYLE-GUIDE.html#notebooks",
+    "href": "STYLE-GUIDE.html#notebooks",
+    "title": "Style Guide — Advanced Algorithms Notes",
+    "section": "",
+    "text": "One notebook per algorithm/topic, not one giant monolith. Both .qmd (Quarto/Pyodide for web) and .ipynb (Jupyter with ipywidgets).\nCode hidden by default (echo: false for qmd, source_hidden for ipynb). The reader sees only the interactive controls and output.\nGranular stepping: Each step should show one atomic operation. For naive matching: one character comparison per step, with explicit backtrack steps. The student should see the repeated work, not just the result.\nVisual feedback: Active path lit up, inactive parts grayed out. Color-coded status messages. Running counters for total comparisons and matches found.\nMatch the notes’ examples: Default inputs in notebooks should use the same strings as the LaTeX notes."
+  },
+  {
+    "objectID": "STYLE-GUIDE.html#what-not-to-do",
+    "href": "STYLE-GUIDE.html#what-not-to-do",
+    "title": "Style Guide — Advanced Algorithms Notes",
+    "section": "",
+    "text": "Don’t compress a walkthrough into a single dense sentence\nDon’t let a formal definition stand without intuitive follow-up\nDon’t use invisible gray for important visual elements\nDon’t nest boxed environments with conflicting border styles\nDon’t assume the reader connects abstract definitions to figures on their own — make the connection explicit with colors and cross-references"
+  },
+  {
+    "objectID": "notebooks/02-knapsack.html",
+    "href": "notebooks/02-knapsack.html",
+    "title": "Knapsack: Greedy Strategies Compared",
+    "section": "",
+    "text": "We compare four greedy approaches to the 0/1 knapsack problem (plus the fractional relaxation). Each strategy sorts items by a different criterion and greedily packs them into the knapsack.\n\n\n\n\n\n\n\n\n\n\n\n\n\nItem\nWeight\nValue\nRatio (v/w)\n\n\n\n\n0\n100\n40\n0.40\n\n\n1\n50\n35\n0.70\n\n\n2\n45\n18\n0.40\n\n\n3\n20\n4\n0.20\n\n\n4\n10\n10\n1.00\n\n\n5\n5\n2\n0.40\n\n\n\nCapacity W = 100. The optimal 0/1 solution has value 55.\n\n\n\nEach strategy sorts items by a different criterion, then greedily packs them if they fit.\n\n\nSort by decreasing value. Pick the most valuable items first.\n\n\n\n\n\n\n\n\n\n\n\nSort by increasing weight. Pick the lightest items first.\n\n\n\n\n\n\n\n\n\n\n\nSort by decreasing value-to-weight ratio. This is the most effective greedy heuristic for 0/1 knapsack.\n\n\n\n\n\n\n\n\n\n\n\nAllow partial items. Sort by ratio and take fractions when an item does not fully fit. This gives an upper bound on the 0/1 optimum.\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\nKey takeaway: The Best Ratio greedy heuristic achieves the optimum on this instance, while the Fractional relaxation provides an upper bound. Max Value and Min Weight perform worse because they do not balance weight and value."
+  },
+  {
+    "objectID": "notebooks/02-knapsack.html#problem-instance",
+    "href": "notebooks/02-knapsack.html#problem-instance",
+    "title": "Knapsack: Greedy Strategies Compared",
+    "section": "",
+    "text": "Item\nWeight\nValue\nRatio (v/w)\n\n\n\n\n0\n100\n40\n0.40\n\n\n1\n50\n35\n0.70\n\n\n2\n45\n18\n0.40\n\n\n3\n20\n4\n0.20\n\n\n4\n10\n10\n1.00\n\n\n5\n5\n2\n0.40\n\n\n\nCapacity W = 100. The optimal 0/1 solution has value 55."
+  },
+  {
+    "objectID": "notebooks/02-knapsack.html#strategy-results",
+    "href": "notebooks/02-knapsack.html#strategy-results",
+    "title": "Knapsack: Greedy Strategies Compared",
+    "section": "",
+    "text": "Each strategy sorts items by a different criterion, then greedily packs them if they fit.\n\n\nSort by decreasing value. Pick the most valuable items first.\n\n\n\n\n\n\n\n\n\n\n\nSort by increasing weight. Pick the lightest items first.\n\n\n\n\n\n\n\n\n\n\n\nSort by decreasing value-to-weight ratio. This is the most effective greedy heuristic for 0/1 knapsack.\n\n\n\n\n\n\n\n\n\n\n\nAllow partial items. Sort by ratio and take fractions when an item does not fully fit. This gives an upper bound on the 0/1 optimum."
+  },
+  {
+    "objectID": "notebooks/02-knapsack.html#strategy-comparison",
+    "href": "notebooks/02-knapsack.html#strategy-comparison",
+    "title": "Knapsack: Greedy Strategies Compared",
+    "section": "",
+    "text": "Key takeaway: The Best Ratio greedy heuristic achieves the optimum on this instance, while the Fractional relaxation provides an upper bound. Max Value and Min Weight perform worse because they do not balance weight and value."
+  }
+]
