@@ -34,3 +34,6 @@ _site/
 
 # OS
 .DS_Store
+
+# Instructor source code (not for redistribution)
+code/
