@@ -1,89 +1,5 @@
 [
   {
-    "objectID": "notebooks/01-cpm.html",
-    "href": "notebooks/01-cpm.html",
-    "title": "Critical Path Method (CPM)",
-    "section": "",
-    "text": "The Critical Path Method finds the shortest possible duration for a project whose jobs have precedence constraints. Each job \\(i\\) has a processing time \\(p_i\\) and cannot start until all its predecessors finish.\nThe algorithm works in two passes over the precedence DAG:\n\nForward pass (topological order): compute the earliest start \\(S_i = \\max_{k \\to i} C_k\\) and earliest completion \\(C_i = S_i + p_i\\) for each job.\nBackward pass (reverse topological order): compute the latest completion \\(\\bar{C}_i = \\min_{i \\to j} \\bar{S}_j\\) and latest start \\(\\bar{S}_i = \\bar{C}_i - p_i\\).\n\nA job is critical when \\(S_i = \\bar{S}_i\\) (equivalently \\(C_i = \\bar{C}_i\\)): it has zero slack and any delay on it delays the entire project. The critical path is the longest path through the DAG.\n\n\n\n\n\n\n\n\n\n\nThe graph below shows the 7 jobs and their precedence constraints. Each node shows the job number and its processing time.\n\n\n\n\n\n\n\n\n\n\n\nProcess each job in topological order. For each job \\(i\\):\n\nEarliest start: \\(S_i = \\max_{k \\in \\text{pred}(i)} C_k\\) (or 0 if no predecessors).\nEarliest completion: \\(C_i = S_i + p_i\\).\n\nThe step-by-step forward pass is shown below. Each panel highlights the job being processed (orange) and the jobs already processed (blue).\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\nProcess each job in reverse topological order. For each job \\(i\\):\n\nLatest completion: \\(\\bar{C}_i = \\min_{j \\in \\text{succ}(i)} \\bar{S}_j\\) (or \\(C_{\\max}\\) if no successors).\nLatest start: \\(\\bar{S}_i = \\bar{C}_i - p_i\\).\n\nThe backward pass tells us how much each job can be delayed without increasing the makespan.\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\nA job \\(i\\) is critical when its slack is zero: \\(S_i = \\bar{S}_i\\) (equivalently, \\(C_i = \\bar{C}_i\\)). The critical path is the longest path through the DAG; its total duration equals \\(C_{\\max}\\). Any delay on a critical job delays the entire project."
-  },
-  {
-    "objectID": "notebooks/01-cpm.html#the-precedence-dag",
-    "href": "notebooks/01-cpm.html#the-precedence-dag",
-    "title": "Critical Path Method (CPM)",
-    "section": "",
-    "text": "The graph below shows the 7 jobs and their precedence constraints. Each node shows the job number and its processing time."
-  },
-  {
-    "objectID": "notebooks/01-cpm.html#forward-pass",
-    "href": "notebooks/01-cpm.html#forward-pass",
-    "title": "Critical Path Method (CPM)",
-    "section": "",
-    "text": "Process each job in topological order. For each job \\(i\\):\n\nEarliest start: \\(S_i = \\max_{k \\in \\text{pred}(i)} C_k\\) (or 0 if no predecessors).\nEarliest completion: \\(C_i = S_i + p_i\\).\n\nThe step-by-step forward pass is shown below. Each panel highlights the job being processed (orange) and the jobs already processed (blue)."
-  },
-  {
-    "objectID": "notebooks/01-cpm.html#backward-pass",
-    "href": "notebooks/01-cpm.html#backward-pass",
-    "title": "Critical Path Method (CPM)",
-    "section": "",
-    "text": "Process each job in reverse topological order. For each job \\(i\\):\n\nLatest completion: \\(\\bar{C}_i = \\min_{j \\in \\text{succ}(i)} \\bar{S}_j\\) (or \\(C_{\\max}\\) if no successors).\nLatest start: \\(\\bar{S}_i = \\bar{C}_i - p_i\\).\n\nThe backward pass tells us how much each job can be delayed without increasing the makespan."
-  },
-  {
-    "objectID": "notebooks/01-cpm.html#critical-path",
-    "href": "notebooks/01-cpm.html#critical-path",
-    "title": "Critical Path Method (CPM)",
-    "section": "",
-    "text": "A job \\(i\\) is critical when its slack is zero: \\(S_i = \\bar{S}_i\\) (equivalently, \\(C_i = \\bar{C}_i\\)). The critical path is the longest path through the DAG; its total duration equals \\(C_{\\max}\\). Any delay on a critical job delays the entire project."
-  },
-  {
-    "objectID": "notebooks/03-dsatur.html",
-    "href": "notebooks/03-dsatur.html",
-    "title": "DSatur: Graph Colouring by Saturation Degree",
-    "section": "",
-    "text": "DSatur (Degree of Saturation) is a greedy graph-colouring heuristic. At each step it picks the uncoloured vertex with the highest saturation degree (the number of distinct colours among its already-coloured neighbours), breaking ties by highest uncoloured degree, then alphabetically. It assigns the smallest available colour.\nWe compare DSatur against a simpler Max Degree ordering (static ordering by vertex degree).\n\n\n\n\n\n\n\n\n\n\nFive vertices (A–E) with 7 edges. The chromatic number is 4 (the subgraph A-B-C-D contains a 4-clique).\n\n\n\n\n\n\n\n\n\n\n\nAt each step, DSatur picks the uncoloured vertex with the highest saturation (number of distinct neighbour colours), breaking ties by uncoloured degree then alphabetically.\n\n\n\n\n\n\n\n\n\n\nThe table below shows the saturation degree, uncoloured degree, and assigned colour for each vertex at every step.\n\n\n\n\n\n\n\n\n\n\n\n\nThe Max Degree heuristic uses a static ordering: vertices are sorted by decreasing degree before colouring begins.\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\nKey takeaway: On this graph, both DSatur and Max Degree achieve the optimal colouring with 4 colours. DSatur’s adaptive saturation-based ordering often outperforms static orderings on larger, more complex graphs."
-  },
-  {
-    "objectID": "notebooks/03-dsatur.html#the-graph",
-    "href": "notebooks/03-dsatur.html#the-graph",
-    "title": "DSatur: Graph Colouring by Saturation Degree",
-    "section": "",
-    "text": "Five vertices (A–E) with 7 edges. The chromatic number is 4 (the subgraph A-B-C-D contains a 4-clique)."
-  },
-  {
-    "objectID": "notebooks/03-dsatur.html#dsatur-step-by-step-colouring",
-    "href": "notebooks/03-dsatur.html#dsatur-step-by-step-colouring",
-    "title": "DSatur: Graph Colouring by Saturation Degree",
-    "section": "",
-    "text": "At each step, DSatur picks the uncoloured vertex with the highest saturation (number of distinct neighbour colours), breaking ties by uncoloured degree then alphabetically.\n\n\n\n\n\n\n\n\n\n\nThe table below shows the saturation degree, uncoloured degree, and assigned colour for each vertex at every step."
-  },
-  {
-    "objectID": "notebooks/03-dsatur.html#max-degree-step-by-step-colouring",
-    "href": "notebooks/03-dsatur.html#max-degree-step-by-step-colouring",
-    "title": "DSatur: Graph Colouring by Saturation Degree",
-    "section": "",
-    "text": "The Max Degree heuristic uses a static ordering: vertices are sorted by decreasing degree before colouring begins."
-  },
-  {
-    "objectID": "notebooks/03-dsatur.html#comparison",
-    "href": "notebooks/03-dsatur.html#comparison",
-    "title": "DSatur: Graph Colouring by Saturation Degree",
-    "section": "",
-    "text": "Key takeaway: On this graph, both DSatur and Max Degree achieve the optimal colouring with 4 colours. DSatur’s adaptive saturation-based ordering often outperforms static orderings on larger, more complex graphs."
-  },
-  {
-    "objectID": "index.html",
-    "href": "index.html",
-    "title": "Advanced Scheduling Systems — Interactive Companions",
-    "section": "",
-    "text": "Interactive visualizations for the Advanced Scheduling Systems course at the University of Udine.\nEach notebook lets you step through classic scheduling algorithms with sliders and custom inputs — all running directly in your browser via Pyodide, no installation required."
-  },
-  {
-    "objectID": "index.html#notebooks",
-    "href": "index.html#notebooks",
-    "title": "Advanced Scheduling Systems — Interactive Companions",
-    "section": "Notebooks",
-    "text": "Notebooks\n\nChapter 1 — Introduction to Scheduling\n\nCritical Path Method (CPM) — Forward pass, backward pass, and critical path on a precedence DAG\nKnapsack: Greedy Strategies Compared — Max value, min weight, best ratio, and fractional relaxation side by side\nDSatur: Graph Colouring — Step through saturation-degree colouring vs max-degree ordering"
-  },
-  {
     "objectID": "STYLE-GUIDE.html",
     "href": "STYLE-GUIDE.html",
     "title": "Style Guide — Advanced Algorithms Notes",
@@ -173,5 +89,89 @@
     "title": "Knapsack: Greedy Strategies Compared",
     "section": "",
     "text": "Key takeaway: The Best Ratio greedy heuristic achieves the optimum on this instance, while the Fractional relaxation provides an upper bound. Max Value and Min Weight perform worse because they do not balance weight and value."
+  },
+  {
+    "objectID": "index.html",
+    "href": "index.html",
+    "title": "Advanced Scheduling Systems — Interactive Companions",
+    "section": "",
+    "text": "Interactive visualizations for the Advanced Scheduling Systems course at the University of Udine.\nEach notebook lets you step through classic scheduling algorithms with sliders and custom inputs — all running directly in your browser via Pyodide, no installation required."
+  },
+  {
+    "objectID": "index.html#notebooks",
+    "href": "index.html#notebooks",
+    "title": "Advanced Scheduling Systems — Interactive Companions",
+    "section": "Notebooks",
+    "text": "Notebooks\n\nChapter 1 — Introduction to Scheduling\n\nCritical Path Method (CPM) — Forward pass, backward pass, and critical path on a precedence DAG\nKnapsack: Greedy Strategies Compared — Max value, min weight, best ratio, and fractional relaxation side by side\nDSatur: Graph Colouring — Step through saturation-degree colouring vs max-degree ordering"
+  },
+  {
+    "objectID": "notebooks/01-cpm.html",
+    "href": "notebooks/01-cpm.html",
+    "title": "Critical Path Method (CPM)",
+    "section": "",
+    "text": "The Critical Path Method finds the shortest possible duration for a project whose jobs have precedence constraints. Each job \\(i\\) has a processing time \\(p_i\\) and cannot start until all its predecessors finish.\nThe algorithm works in two passes over the precedence DAG:\n\nForward pass (topological order): compute the earliest start \\(S_i = \\max_{k \\to i} C_k\\) and earliest completion \\(C_i = S_i + p_i\\) for each job.\nBackward pass (reverse topological order): compute the latest completion \\(\\bar{C}_i = \\min_{i \\to j} \\bar{S}_j\\) and latest start \\(\\bar{S}_i = \\bar{C}_i - p_i\\).\n\nA job is critical when \\(S_i = \\bar{S}_i\\) (equivalently \\(C_i = \\bar{C}_i\\)): it has zero slack and any delay on it delays the entire project. The critical path is the longest path through the DAG.\n\n\n\n\n\n\n\n\n\n\nThe graph below shows the 7 jobs and their precedence constraints. Each node shows the job number and its processing time.\n\n\n\n\n\n\n\n\n\n\n\nProcess each job in topological order. For each job \\(i\\):\n\nEarliest start: \\(S_i = \\max_{k \\in \\text{pred}(i)} C_k\\) (or 0 if no predecessors).\nEarliest completion: \\(C_i = S_i + p_i\\).\n\nThe step-by-step forward pass is shown below. Each panel highlights the job being processed (orange) and the jobs already processed (blue).\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\nProcess each job in reverse topological order. For each job \\(i\\):\n\nLatest completion: \\(\\bar{C}_i = \\min_{j \\in \\text{succ}(i)} \\bar{S}_j\\) (or \\(C_{\\max}\\) if no successors).\nLatest start: \\(\\bar{S}_i = \\bar{C}_i - p_i\\).\n\nThe backward pass tells us how much each job can be delayed without increasing the makespan.\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\nA job \\(i\\) is critical when its slack is zero: \\(S_i = \\bar{S}_i\\) (equivalently, \\(C_i = \\bar{C}_i\\)). The critical path is the longest path through the DAG; its total duration equals \\(C_{\\max}\\). Any delay on a critical job delays the entire project."
+  },
+  {
+    "objectID": "notebooks/01-cpm.html#the-precedence-dag",
+    "href": "notebooks/01-cpm.html#the-precedence-dag",
+    "title": "Critical Path Method (CPM)",
+    "section": "",
+    "text": "The graph below shows the 7 jobs and their precedence constraints. Each node shows the job number and its processing time."
+  },
+  {
+    "objectID": "notebooks/01-cpm.html#forward-pass",
+    "href": "notebooks/01-cpm.html#forward-pass",
+    "title": "Critical Path Method (CPM)",
+    "section": "",
+    "text": "Process each job in topological order. For each job \\(i\\):\n\nEarliest start: \\(S_i = \\max_{k \\in \\text{pred}(i)} C_k\\) (or 0 if no predecessors).\nEarliest completion: \\(C_i = S_i + p_i\\).\n\nThe step-by-step forward pass is shown below. Each panel highlights the job being processed (orange) and the jobs already processed (blue)."
+  },
+  {
+    "objectID": "notebooks/01-cpm.html#backward-pass",
+    "href": "notebooks/01-cpm.html#backward-pass",
+    "title": "Critical Path Method (CPM)",
+    "section": "",
+    "text": "Process each job in reverse topological order. For each job \\(i\\):\n\nLatest completion: \\(\\bar{C}_i = \\min_{j \\in \\text{succ}(i)} \\bar{S}_j\\) (or \\(C_{\\max}\\) if no successors).\nLatest start: \\(\\bar{S}_i = \\bar{C}_i - p_i\\).\n\nThe backward pass tells us how much each job can be delayed without increasing the makespan."
+  },
+  {
+    "objectID": "notebooks/01-cpm.html#critical-path",
+    "href": "notebooks/01-cpm.html#critical-path",
+    "title": "Critical Path Method (CPM)",
+    "section": "",
+    "text": "A job \\(i\\) is critical when its slack is zero: \\(S_i = \\bar{S}_i\\) (equivalently, \\(C_i = \\bar{C}_i\\)). The critical path is the longest path through the DAG; its total duration equals \\(C_{\\max}\\). Any delay on a critical job delays the entire project."
+  },
+  {
+    "objectID": "notebooks/03-dsatur.html",
+    "href": "notebooks/03-dsatur.html",
+    "title": "DSatur: Graph Colouring by Saturation Degree",
+    "section": "",
+    "text": "DSatur (Degree of Saturation) is a greedy graph-colouring heuristic. At each step it picks the uncoloured vertex with the highest saturation degree (the number of distinct colours among its already-coloured neighbours), breaking ties by highest uncoloured degree, then alphabetically. It assigns the smallest available colour.\nWe compare DSatur against a simpler Max Degree ordering (static ordering by vertex degree).\n\n\n\n\n\n\n\n\n\n\nFive vertices (A–E) with 7 edges. The chromatic number is 4 (the subgraph A-B-C-D contains a 4-clique).\n\n\n\n\n\n\n\n\n\n\n\nAt each step, DSatur picks the uncoloured vertex with the highest saturation (number of distinct neighbour colours), breaking ties by uncoloured degree then alphabetically.\n\n\n\n\n\n\n\n\n\n\nThe table below shows the saturation degree, uncoloured degree, and assigned colour for each vertex at every step.\n\n\n\n\n\n\n\n\n\n\n\n\nThe Max Degree heuristic uses a static ordering: vertices are sorted by decreasing degree before colouring begins.\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\nKey takeaway: On this graph, both DSatur and Max Degree achieve the optimal colouring with 4 colours. DSatur’s adaptive saturation-based ordering often outperforms static orderings on larger, more complex graphs."
+  },
+  {
+    "objectID": "notebooks/03-dsatur.html#the-graph",
+    "href": "notebooks/03-dsatur.html#the-graph",
+    "title": "DSatur: Graph Colouring by Saturation Degree",
+    "section": "",
+    "text": "Five vertices (A–E) with 7 edges. The chromatic number is 4 (the subgraph A-B-C-D contains a 4-clique)."
+  },
+  {
+    "objectID": "notebooks/03-dsatur.html#dsatur-step-by-step-colouring",
+    "href": "notebooks/03-dsatur.html#dsatur-step-by-step-colouring",
+    "title": "DSatur: Graph Colouring by Saturation Degree",
+    "section": "",
+    "text": "At each step, DSatur picks the uncoloured vertex with the highest saturation (number of distinct neighbour colours), breaking ties by uncoloured degree then alphabetically.\n\n\n\n\n\n\n\n\n\n\nThe table below shows the saturation degree, uncoloured degree, and assigned colour for each vertex at every step."
+  },
+  {
+    "objectID": "notebooks/03-dsatur.html#max-degree-step-by-step-colouring",
+    "href": "notebooks/03-dsatur.html#max-degree-step-by-step-colouring",
+    "title": "DSatur: Graph Colouring by Saturation Degree",
+    "section": "",
+    "text": "The Max Degree heuristic uses a static ordering: vertices are sorted by decreasing degree before colouring begins."
+  },
+  {
+    "objectID": "notebooks/03-dsatur.html#comparison",
+    "href": "notebooks/03-dsatur.html#comparison",
+    "title": "DSatur: Graph Colouring by Saturation Degree",
+    "section": "",
+    "text": "Key takeaway: On this graph, both DSatur and Max Degree achieve the optimal colouring with 4 colours. DSatur’s adaptive saturation-based ordering often outperforms static orderings on larger, more complex graphs."
   }
 ]

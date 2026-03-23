@@ -1,23 +1,23 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
-    <loc>https://TheGhoul21.github.io/uniud-advanced-scheduling-systems/notebooks/01-cpm.html</loc>
-    <lastmod>2026-03-23T05:10:47.760Z</lastmod>
-  </url>
-  <url>
-    <loc>https://TheGhoul21.github.io/uniud-advanced-scheduling-systems/notebooks/03-dsatur.html</loc>
-    <lastmod>2026-03-23T05:10:47.762Z</lastmod>
-  </url>
-  <url>
-    <loc>https://TheGhoul21.github.io/uniud-advanced-scheduling-systems/index.html</loc>
-    <lastmod>2026-03-23T05:10:47.744Z</lastmod>
-  </url>
-  <url>
     <loc>https://TheGhoul21.github.io/uniud-advanced-scheduling-systems/STYLE-GUIDE.html</loc>
-    <lastmod>2026-03-23T05:10:47.728Z</lastmod>
+    <lastmod>2026-03-23T05:17:05.752Z</lastmod>
   </url>
   <url>
     <loc>https://TheGhoul21.github.io/uniud-advanced-scheduling-systems/notebooks/02-knapsack.html</loc>
-    <lastmod>2026-03-23T05:10:47.762Z</lastmod>
+    <lastmod>2026-03-23T05:17:05.761Z</lastmod>
+  </url>
+  <url>
+    <loc>https://TheGhoul21.github.io/uniud-advanced-scheduling-systems/index.html</loc>
+    <lastmod>2026-03-23T05:17:05.757Z</lastmod>
+  </url>
+  <url>
+    <loc>https://TheGhoul21.github.io/uniud-advanced-scheduling-systems/notebooks/01-cpm.html</loc>
+    <lastmod>2026-03-23T05:17:05.761Z</lastmod>
+  </url>
+  <url>
+    <loc>https://TheGhoul21.github.io/uniud-advanced-scheduling-systems/notebooks/03-dsatur.html</loc>
+    <lastmod>2026-03-23T05:17:05.761Z</lastmod>
   </url>
 </urlset>
